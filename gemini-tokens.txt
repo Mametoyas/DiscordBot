@@ -1,0 +1,66 @@
+Type,Model / Tool,Category / Feature,RPM,TPM / Limit,RPD
+Model Rate Limit,ChartsAntigravity,Agents,0 / 60,0 / 100K,0 / 100
+Model Rate Limit,Deep Research Pro Preview,Agents,0 / 0,0 / 0,0 / 0
+Model Rate Limit,Gemini 2 Flash,Text-out models,0 / 0,0 / 0,0 / 0
+Model Rate Limit,Gemini 2 Flash Lite,Text-out models,0 / 0,0 / 0,0 / 0
+Model Rate Limit,Computer Use Preview,Other models,0 / 0,0 / 0,0 / 0
+Model Rate Limit,Gemini 2.5 Flash,Text-out models,0 / 5,0 / 250K,0 / 20
+Model Rate Limit,Nano Banana (Gemini 2.5 Flash Preview Image),Multi-modal generative models,0 / 0,0 / 0,0 / 0
+Model Rate Limit,Gemini 2.5 Flash Lite,Text-out models,0 / 10,0 / 250K,0 / 20
+Model Rate Limit,Gemini 2.5 Flash TTS,Multi-modal generative models,0 / 3,0 / 10K,0 / 10
+Model Rate Limit,Gemini 2.5 Pro,Text-out models,0 / 0,0 / 0,0 / 0
+Model Rate Limit,Gemini 2.5 Pro TTS,Multi-modal generative models,0 / 0,0 / 0,0 / 0
+Model Rate Limit,Gemini 3 Flash,Text-out models,0 / 5,0 / 250K,0 / 20
+Model Rate Limit,Nano Banana Pro (Gemini 3 Pro Image),Multi-modal generative models,0 / 0,0 / 0,0 / 0
+Model Rate Limit,Gemini 3.1 Pro,Text-out models,0 / 0,0 / 0,0 / 0
+Model Rate Limit,Nano Banana 2 (Gemini 3.1 Flash Image),Multi-modal generative models,0 / 0,0 / 0,0 / 0
+Model Rate Limit,Gemini 3.1 Flash Lite,Text-out models,0 / 15,0 / 250K,0 / 500
+Model Rate Limit,Nano Banana 2 Lite (Gemini 3.1 Flash Lite Image),Multi-modal generative models,0 / 0,0 / 0,0 / 0
+Model Rate Limit,Gemini 3.1 Flash TTS,Multi-modal generative models,0 / 3,0 / 10K,0 / 10
+Model Rate Limit,Gemini 3.5 Flash,Text-out models,0 / 5,0 / 250K,0 / 20
+Model Rate Limit,Gemini 3.5 Flash Lite,Text-out models,0 / 15,0 / 250K,0 / 500
+Model Rate Limit,Gemini 3.5 Transcribe,Live API,0 / 3,0 / 10K,0 / 25
+Model Rate Limit,Gemini 3.6 Flash,Text-out models,0 / 5,0 / 250K,0 / 20
+Model Rate Limit,Gemini 3.7 Flash,Text-out models,0 / 5,0 / 250K,0 / 20
+Model Rate Limit,Gemini 3.8 Flash,Text-out models,0 / 5,0 / 250K,0 / 20
+Model Rate Limit,Gemini 3.8 Flash Lite TTS,Multi-modal generative models,0 / 3,0 / 10K,0 / 10
+Model Rate Limit,Gemini 3.8 Flash TTS,Multi-modal generative models,0 / 3,0 / 10K,0 / 10
+Model Rate Limit,Gemini Embedding 1,Other models,0 / 100,0 / 30K,0 / 1K
+Model Rate Limit,Gemini Embedding 2,Other models,0 / 100,0 / 30K,0 / 1K
+Model Rate Limit,Gemini Omni 1.1 Flash,Multi-modal generative models,0 / 0,0 / 0,0 / 0
+Model Rate Limit,Gemini Omni Flash,Multi-modal generative models,0 / 0,0 / 0,0 / 0
+Model Rate Limit,Gemini Robotics ER 2 Preview,Other models,0 / 5,0 / 250K,0 / 20
+Model Rate Limit,Gemma 4 26B,Other models,0 / 30,0 / 16K,0 / 14.4K
+Model Rate Limit,Gemma 4 31B,Other models,0 / 30,0 / 16K,0 / 14.4K
+Model Rate Limit,Lyria 3 Clip,Multi-modal generative models,0 / 0,0 / 0,0 / 0
+Model Rate Limit,Lyria 3 Pro,Multi-modal generative models,0 / 0,0 / 0,0 / 0
+Model Rate Limit,Veo 3 Fast Generate,Multi-modal generative models,0 / 0,-,0 / 0
+Model Rate Limit,Veo 3 Generate,Multi-modal generative models,0 / 0,-,0 / 0
+Model Rate Limit,Veo 3 Lite Generate,Multi-modal generative models,0 / 0,-,0 / 0
+Model Rate Limit,Gemini 2.5 Flash Native Audio Dialog,Live API,0 / Unlimited,0 / 1M,0 / Unlimited
+Model Rate Limit,Gemini 3 Flash Live,Live API,0 / Unlimited,0 / 65K,0 / Unlimited
+Model Rate Limit,Gemini 3.5 Live Translate,Live API,0 / Unlimited,0 / 20K,0 / Unlimited
+Model Rate Limit,Gemini 3.5 Transcribe Live,Live API,0 / Unlimited,0 / 20K,0 / Unlimited
+Model Rate Limit,Gemini 3.8 Live,Live API,0 / Unlimited,0 / 65K,0 / Unlimited
+Model Rate Limit,Gemini 3.8 Live Extended Thinking,Live API,0 / Unlimited,0 / 65K,0 / Unlimited
+Tool Limit,Deep Research Pro Preview,Map grounding,-,0 / 500,-
+Tool Limit,Gemini 2 Flash,Map grounding,-,0 / 500,-
+Tool Limit,Computer Use Preview,Map grounding,-,0 / 500,-
+Tool Limit,Gemini 2.5 Flash,Map grounding,-,0 / 500,-
+Tool Limit,Gemini 2.5 Flash Lite,Map grounding,-,0 / 500,-
+Tool Limit,Gemini 2.5 Pro,Map grounding,-,0 / 0,-
+Tool Limit,Gemini 3 Flash,Map grounding,-,0 / 0,-
+Tool Limit,Gemini 3.1 Pro,Map grounding,-,0 / 0,-
+Tool Limit,Gemini 3.1 Flash Lite,Map grounding,-,0 / 500,-
+Tool Limit,Gemini 3.1 Flash TTS,Map grounding,-,0 / 500,-
+Tool Limit,Gemini 3.5 Flash,Map grounding,-,0 / 0,-
+Tool Limit,Gemini 3.5 Flash Lite,Map grounding,-,0 / 500,-
+Tool Limit,Gemini 3.5 Transcribe,Map grounding,-,0 / 500,-
+Tool Limit,Gemini 3.6 Flash,Map grounding,-,0 / 0,-
+Tool Limit,Gemini 3.7 Flash,Map grounding,-,0 / 0,-
+Tool Limit,Gemini 3.8 Flash,Map grounding,-,0 / 0,-
+Tool Limit,Gemini Robotics ER 2 Preview,Map grounding,-,0 / 500,-
+Tool Limit,Gemini 2,Search grounding,-,0 / 1.5K,-
+Tool Limit,Gemini 2.5,Search grounding,-,0 / 1.5K,-
+Tool Limit,Gemini 3,Search grounding,-,0 / 0,-
+Tool Limit,Default,Search grounding,-,0 / 1.5K,-

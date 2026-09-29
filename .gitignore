@@ -1,0 +1,6 @@
+__pycache__/
+.venv/
+.env
+*.pyc
+# reference clone, own repo — do not push
+discord-bot-agents/

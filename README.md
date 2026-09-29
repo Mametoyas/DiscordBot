@@ -1,0 +1,63 @@
+# Discord Gemini Bot — now with Server-Management Agent
+
+Discord AI bot using hosted **Gemini API** — no local LLM, no own server. Runs as a worker on **Render**.
+
+- `@Bot <คำสั่งจัดการ server>` → **agent** (plan → execute → summarize, 34 + 9 voice skills)
+- `@Bot เปิดเพลง <ชื่อเพลง>` → เข้าห้องเสียง + เล่นผ่าน Lavalink (queue/skip/stop ได้)
+- `@Bot` ลอยๆ → greeting (no LLM call)
+- `@Bot` ลอยๆ → greeting (no LLM call)
+- `/ask <question>` → chat Q&A (Gemini)
+- `/help` → วิธีใช้ทั้งหมด (ephemeral, เห็นคนเดียว)
+- `/play <เพลง>` → เปิดเพลง **มี suggest ขณะพิมพ์** (Lavalink search) · `/skip` `/stop` `/queue` `/leave`
+- `/model [name]` → ดู/เปลี่ยน backbone runtime (owner only, มีผลทันทีไม่ต้อง restart)
+- `/addkey <key>` → เพิ่ม API key ตอนรัน (owner only, ephemeral)
+- `/llmstatus` → ดู model + จำนวน keys (owner only)
+- Every message in `AUTO_REPLY_CHANNEL_IDS` + DM → chat Q&A
+- Multi-key rotation: `GEMINI_KEYS=key1,key2,key3` auto-switches on 429/quota
+
+## Quickstart (local)
+
+```powershell
+Copy-Item .env.example .env   # then fill tokens
+pip install -r requirements.txt
+python bot.py
+```
+
+Required env: `DISCORD_TOKEN`, `GEMINI_KEYS`. Optional: `GEMINI_MODEL` (default `gemini-2.0-flash`), `AUTO_REPLY_CHANNEL_IDS`, `HISTORY_LEN`, `SYSTEM_PROMPT`, `BOT_NAME`.
+
+Also enable **MESSAGE CONTENT INTENT** in the Discord Developer Portal and invite with `bot` + `applications.commands` scopes. For name-based member search, **SERVER MEMBERS INTENT** is recommended.
+
+## Layout (mirrors `discord-bot-agents/src/`)
+
+- `bot.py` — thin entry: client + `/ask` + events (keeps `Procfile`/`render.yaml` as `python bot.py`)
+- `src/config.py` — env loading
+- `src/core/llm.py` — `GeminiRotator` + `generate_text()`
+- `src/skills/` — 43 skills in 8 modules + registry (`voice.py` = Lavalink music)
+- `lavalink/` — Dockerfile + application.yml (Lavalink v4 + youtube-plugin 1.18.2)
+- `src/agent/` — `run()` = prefetch → planner → executor → summarizer + `language.py` + `composer.py`
+- `src/handler/message_handler.py` — mention/cooldown/greeting + agent/chat routing (+`paginator.py` ปุ่ม ◀ 1/3 ▶)
+- `src/utils/` — `fuzzy_match.py` / `error_mapper.py` / `json_helper.py` / `snipe_manager.py`
+- `src/web/server.py` — admin dashboard per DESIGN.md (status pill, switch-model dropdown, add-key, terminal log; stdlib only)
+- `discord-bot-agents/` — reference Node.js implementation (read-only)
+- Reusable Agent Skill: `~/.agents/skills/discord-bot-agent/` (`SKILL.md` + catalog/prompts/scope references)
+
+## Dashboard
+
+Local `http://localhost:8080` · Render service URL. Online pill, model/keys/servers/latency/uptime, add-key box, live terminal log. Write actions need `ADMIN_TOKEN` env (browser asks once, remembered locally).
+
+## Docs for contributors / AI agents
+
+| Doc | Use |
+|---|---|
+| `AGENT.md` | **Start here** (repo map + rules) |
+| `PLAN.md` | Status + what's next |
+| `ARCHITECTURE.md` | How `bot.py` works |
+| `QA.md` | Decisions + FAQ (e.g. why not Vercel) |
+| `TESTER.md` | Verification checklists |
+| `DEPLOY.md` | Render runbook |
+| `TODO.md` | Backlog |
+| `CHANGELOG.md` | History of changes |
+
+## Deploy
+
+Render → New → Blueprint → select repo → set env vars → Deploy. Full steps in `DEPLOY.md`.
