@@ -3,7 +3,7 @@
 import discord
 
 from . import Skill, register
-from src.utils.fuzzy_match import TEXT_KINDS, find_channel
+from src.utils.fuzzy_match import TEXT_KINDS, find_channel, find_role
 
 TYPE_MAP = {
     discord.ChannelType.text: "Text",
@@ -92,13 +92,28 @@ async def _edit_channel(guild, params, message):
         kwargs["category"] = cat
     if params.get("ageRestricted") is not None and ch.type in TEXT_KINDS:
         kwargs["nsfw"] = bool(params["ageRestricted"])
+    if params.get("private") is not None or params.get("allowRoles"):
+        overwrites = dict(ch.overwrites)
+        if params.get("private") is not None:
+            ow = overwrites.get(guild.default_role, discord.PermissionOverwrite())
+            ow.view_channel = None if not params["private"] else False
+            overwrites[guild.default_role] = ow
+        for rname in (params.get("allowRoles") or []):
+            role = find_role(guild, rname)
+            if role:
+                ow = overwrites.get(role, discord.PermissionOverwrite())
+                ow.view_channel = True
+                ow.send_messages = True
+                ow.connect = True
+                overwrites[role] = ow
+        kwargs["overwrites"] = overwrites
     await ch.edit(**kwargs)
     return True
 
 
 register(Skill(
     name="editChannel",
-    description="Edits the name, topic, position, category, or age restriction of a channel.",
+    description="Edits the name, topic, position, category, age restriction, privacy (private hides from @everyone), or role access of a channel.",
     params={
         "currentName": "string - The current name, mention, or ID of the channel.",
         "newName": "string (optional) - New channel name.",
@@ -106,6 +121,8 @@ register(Skill(
         "position": "number (optional) - New position.",
         "parentCategory": "string (optional) - Move to this category.",
         "ageRestricted": "boolean (optional) - Set age restriction.",
+        "private": "boolean (optional) - true hides channel from @everyone, false unhides.",
+        "allowRoles": "array (optional) - Role names to grant view/send/connect.",
     },
     execute=_edit_channel,
     required_permissions=["manage_channels"],
@@ -223,8 +240,9 @@ register(Skill(
 async def _restructure(guild, params, message):
     """Build whole layout in ONE action (bypasses the 5-action plan cap).
 
-    layout = list of {name, text: [names], voice: [names]} (or JSON string).
-    Creates missing categories/channels, moves existing channels in. Never deletes.
+    layout = list of {name, text: [names], voice: [names], private: bool}
+    (or JSON string). Creates missing categories/channels, moves existing
+    channels in, applies privacy. Never deletes.
     """
     import json as _json
 
@@ -247,6 +265,13 @@ async def _restructure(guild, params, message):
                 block["name"].strip(),
                 reason=f"restructureServer by AI bot for {message.author}")
             created.append(f"📁 {cat.name}")
+        if block.get("private"):
+            ow = dict(cat.overwrites)
+            ow[guild.default_role] = discord.PermissionOverwrite(view_channel=False)
+            await cat.edit(
+                overwrites=ow,
+                reason=f"restructureServer private by AI bot for {message.author}")
+            created.append(f"🔒 {cat.name} (private)")
         for kind, is_voice in (("text", False), ("voice", True)):
             for raw in (block.get(kind) or [])[:20]:
                 name = _clean_name(raw)
@@ -288,8 +313,8 @@ async def _restructure(guild, params, message):
 
 register(Skill(
     name="restructureServer",
-    description="Reorganizes the server in ONE call: creates categories, creates missing text/voice channels inside them, moves existing channels in. Takes a full layout, never deletes anything.",
-    params={"layout": "array - [{name: category, text: [channel names], voice: [channel names]}]."},
+    description="Reorganizes the server in ONE call: creates categories (private:true hides from @everyone), creates missing text/voice channels inside them, moves existing channels in. Takes a full layout, never deletes anything.",
+    params={"layout": "array - [{name: category, text: [...], voice: [...], private: true/false}]."},
     execute=_restructure,
     required_permissions=["manage_channels"],
 ))
