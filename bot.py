@@ -47,6 +47,7 @@ async def _connect_lavalink():
     if not config.LAVALINK_HOST or not config.LAVALINK_PASSWORD:
         log.warning("LAVALINK_HOST/PASSWORD not set — voice skills disabled")
         return
+    await _probe_lavalink()
     if getattr(wavelink.Pool, "nodes", None):
         return
     try:
@@ -68,6 +69,24 @@ async def on_ready():
     except Exception as e:
         log.error(f"sync commands ล้มเหลว: {e}")
     await _connect_lavalink()
+
+
+async def _probe_lavalink():
+    """One-shot REST check: OK / wrong password / unreachable. Narrows all failures to one line."""
+    import httpx
+
+    try:
+        async with httpx.AsyncClient(timeout=10) as c:
+            r = await c.get(config.LAVALINK_HOST.rstrip("/") + "/v4/info",
+                            headers={"Authorization": config.LAVALINK_PASSWORD})
+        if r.status_code == 200:
+            log.info("Lavalink probe: OK (host ติด, รหัสผ่านถูก)")
+        elif r.status_code in (401, 403):
+            log.error("Lavalink probe: รหัสผ่านผิด (401) — เช็ค LAVALINK_PASSWORD")
+        else:
+            log.warning(f"Lavalink probe: HTTP {r.status_code}")
+    except Exception as e:
+        log.error(f"Lavalink probe: ต่อ host ไม่ได้ ({type(e).__name__}) — node ดับหรือ network โดนบล็อก")
 
 
 @client.event
