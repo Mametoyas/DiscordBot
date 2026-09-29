@@ -156,18 +156,45 @@ register(Skill(
 ))
 
 
+STYLE_KEYWORDS = {
+    "gaming": ("minecraft", "มายคราฟ", "valorant", "pubg", "พับจี", "game", "เกม",
+               "lfp", "party", "clip", "คลิป", "เล่น"),
+    "study": ("study", "homework", "เรียน", "หนังสือ", "code", "script", "program",
+              "it", "ai", "knowledge", "ux", "ontology", "หุ้น", "work", "งาน",
+              "project", "โปรเจกต์", "resource"),
+}
+
+STYLE_TEMPLATES = {
+    "study": [("general", "text"), ("study-room", "text"), ("resources", "text"),
+              ("welcome", "text"), ("Study Lounge", "voice")],
+    "gaming": [("general", "text"), ("looking-for-party", "text"), ("clips", "text"),
+               ("welcome", "text"), ("Game Lobby", "voice")],
+    "community": [("general", "text"), ("rules", "text"), ("welcome", "text"),
+                  ("Chill Lounge", "voice")],
+}
+
+
+def _detect_style(guild) -> str:
+    """Pick template from existing channel names (user asked: adapt, don't default)."""
+    names = " ".join(c.name.lower() for c in guild.channels)
+    scores = {s: sum(1 for kw in kws if kw in names)
+              for s, kws in STYLE_KEYWORDS.items()}
+    best = max(scores, key=scores.get)
+    return best if scores[best] > 0 else "community"
+
+
 async def _setup_server(guild, params, message):
     """Create a standard layout (never deletes anything, skips existing)."""
-    style = str(params.get("style", "community")).lower()
-    if "study" in style or "เรียน" in style:
-        plan = [("general", "text"), ("study-room", "text"),
-                ("resources", "text"), ("welcome", "text"), ("Study Lounge", "voice")]
-    elif "game" in style or "เกม" in style:
-        plan = [("general", "text"), ("looking-for-party", "text"),
-                ("clips", "text"), ("welcome", "text"), ("Game Lobby", "voice")]
+    asked = str(params.get("style", "")).lower()
+    if "study" in asked or "เรียน" in asked:
+        style = "study"
+    elif "gam" in asked or "เกม" in asked:
+        style = "gaming"
+    elif "commun" in asked:
+        style = "community"
     else:
-        plan = [("general", "text"), ("rules", "text"), ("welcome", "text"),
-                ("Chill Lounge", "voice")]
+        style = _detect_style(guild)  # no explicit style -> adapt to this server
+    plan = STYLE_TEMPLATES[style]
     made, skipped = [], []
     welcome_ch = None
     for name, kind in plan:
@@ -195,7 +222,7 @@ async def _setup_server(guild, params, message):
                 "• อยากคุยเสียง เข้าห้องเสียงด้านล่างได้เลย")
         except discord.HTTPException:
             pass
-    parts = []
+    parts = [f"สไตล์ที่เลือก: {style}"]
     if made:
         parts.append("สร้างแล้ว: " + ", ".join(f"#{m}" for m in made))
     if skipped:
@@ -205,8 +232,8 @@ async def _setup_server(guild, params, message):
 
 register(Skill(
     name="setupServer",
-    description="Sets up a standard channel layout (general, rules, welcome + voice lounge) with a welcome message. Never deletes anything, skips existing channels.",
-    params={"style": "string (optional) - community (default), gaming, or study."},
+    description="Sets up channels adapted to THIS server: scans existing channel names and picks community/gaming/study template automatically (explicit style param overrides). Never deletes, skips existing, posts welcome message.",
+    params={"style": "string (optional) - community, gaming, study, or empty = auto-detect."},
     execute=_setup_server,
     required_permissions=["manage_channels"],
 ))
