@@ -1,6 +1,7 @@
 # CHANGELOG.md
 
-## 2026-09-29 — setupServer skill (35 skills)
+## 2026-09-29 — restructureServer + createCategory (37 skills)
+- `channels.py`: `restructureServer` (whole category/channel layout in ONE action — bypasses 5-action cap; creates missing, moves existing, never deletes) + `createCategory`. Planner routes big layout requests here.
 - `server.py`: `setupServer` (style community/gaming/study; never deletes, skips existing, posts welcome message). Planner routes vague "จัดเซิร์ฟเวอร์" here instead of asking for names.
 - Deleted `src/skills/voice.py`, `lavalink/`, music slash (`/play`…), Lavalink wiring, `wavelink/PyNaCl/davey` deps, `LAVALINK_*` config. Reason: public nodes unreliable + 315MB RAM too tight. Music lives on in the `music` branch if needed later.
 - Planner scope: music out-of-scope again. Slash now 5: `/ask /help /model /addkey /llmstatus`.

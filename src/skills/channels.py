@@ -1,4 +1,4 @@
-"""Channel skills (5): create/delete/edit/list/info."""
+"""Channel skills (7): create/delete/edit/list/info/category/restructure."""
 
 import discord
 
@@ -190,4 +190,106 @@ register(Skill(
     description="Shows detailed info about one channel (topic, category, position, NSFW).",
     params={"channelName": "string - The name, mention, or ID of the channel."},
     execute=_get_channel_info,
+))
+
+
+def _clean_name(name: str) -> str:
+    """Discord channel names: lowercase, spaces -> dashes, max 100 chars."""
+    return str(name or "").strip().lower().replace(" ", "-")[:100]
+
+
+async def _create_category(guild, params, message):
+    name = (params.get("name") or "").strip()
+    if not name:
+        raise ValueError("I need a name for the category first.")
+    exists = await find_channel(
+        guild, name, kinds=(discord.ChannelType.category,))
+    if exists:
+        return f"Category **{exists.name}** already exists."
+    cat = await guild.create_category(
+        name, reason=f"Created by AI bot for {message.author}")
+    return f"Category **{cat.name}** created."
+
+
+register(Skill(
+    name="createCategory",
+    description="Creates a channel category (existing name returns as-is, no duplicate).",
+    params={"name": "string - Category name."},
+    execute=_create_category,
+    required_permissions=["manage_channels"],
+))
+
+
+async def _restructure(guild, params, message):
+    """Build whole layout in ONE action (bypasses the 5-action plan cap).
+
+    layout = list of {name, text: [names], voice: [names]} (or JSON string).
+    Creates missing categories/channels, moves existing channels in. Never deletes.
+    """
+    import json as _json
+
+    layout = params.get("layout")
+    if isinstance(layout, str):
+        try:
+            layout = _json.loads(layout)
+        except ValueError:
+            raise ValueError("Layout ไม่ใช่ JSON ที่อ่านได้ — ลองใหม่อีกที")
+    if not isinstance(layout, list) or not layout:
+        raise ValueError("I need a layout: list of {name, text:[...], voice:[...]}.")
+    created, moved, skipped = [], [], []
+    for block in layout[:8]:  # safety cap
+        if not isinstance(block, dict) or not block.get("name"):
+            continue
+        cat = await find_channel(
+            guild, block["name"], kinds=(discord.ChannelType.category,))
+        if not cat:
+            cat = await guild.create_category(
+                block["name"].strip(),
+                reason=f"restructureServer by AI bot for {message.author}")
+            created.append(f"📁 {cat.name}")
+        for kind, is_voice in (("text", False), ("voice", True)):
+            for raw in (block.get(kind) or [])[:20]:
+                name = _clean_name(raw)
+                if not name:
+                    continue
+                kinds = ((discord.ChannelType.voice, discord.ChannelType.stage_voice)
+                         if is_voice else TEXT_KINDS)
+                ch = await find_channel(guild, raw) or await find_channel(guild, name)
+                try:
+                    if ch:
+                        if getattr(ch, "category_id", None) != cat.id:
+                            await ch.edit(
+                                category=cat,
+                                reason=f"restructureServer by AI bot for {message.author}")
+                            moved.append(f"{'🔊' if is_voice else '#️⃣'} {ch.name}")
+                        else:
+                            skipped.append(ch.name)
+                    elif is_voice:
+                        ch = await guild.create_voice_channel(
+                            name, category=cat,
+                            reason=f"restructureServer by AI bot for {message.author}")
+                        created.append(f"🔊 {name}")
+                    else:
+                        ch = await guild.create_text_channel(
+                            name, category=cat,
+                            reason=f"restructureServer by AI bot for {message.author}")
+                        created.append(f"#️⃣ {name}")
+                except discord.HTTPException:
+                    skipped.append(f"{name} (สร้างไม่ได้)")
+    parts = []
+    if created:
+        parts.append("สร้างแล้ว:\n" + "\n".join(f"- {c}" for c in created))
+    if moved:
+        parts.append("ย้ายแล้ว:\n" + "\n".join(f"- {c}" for c in moved))
+    if skipped:
+        parts.append("มีอยู่แล้ว ข้าม: " + ", ".join(skipped))
+    return "\n".join(parts) or "ไม่มีอะไรต้องทำ"
+
+
+register(Skill(
+    name="restructureServer",
+    description="Reorganizes the server in ONE call: creates categories, creates missing text/voice channels inside them, moves existing channels in. Takes a full layout, never deletes anything.",
+    params={"layout": "array - [{name: category, text: [channel names], voice: [channel names]}]."},
+    execute=_restructure,
+    required_permissions=["manage_channels"],
 ))
