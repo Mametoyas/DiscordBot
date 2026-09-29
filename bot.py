@@ -31,6 +31,9 @@ if config.GEMINI_KEYS:
 else:
     gemini = None
 
+_tok = config.DISCORD_TOKEN
+log.info(f"Token fingerprint: {(_tok[:6] + '…') if _tok else '(empty)'} len={len(_tok)}")
+
 intents = discord.Intents.default()
 intents.message_content = True
 intents.guilds = True
