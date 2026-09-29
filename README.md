@@ -61,4 +61,4 @@ Local `http://localhost:8080` · Render service URL. Online pill, model/keys/ser
 ## Deploy
 
 Render → New → Blueprint → select repo → set env vars → Deploy. Full steps in `DEPLOY.md`.
-No card? Hugging Face Spaces (free forever, sleeps) — `DEPLOY-HF.md`. Trial credit, no sleep — `DEPLOY-RAILWAY.md`.
+No card? Hugging Face Spaces (free forever, sleeps) — `DEPLOY-HF.md`. Trial credit, no sleep — `DEPLOY-RAILWAY.md`. **Free forever, no card, 24/7 — `DEPLOY-FREE.md`** (Quaxly + public Lavalink).

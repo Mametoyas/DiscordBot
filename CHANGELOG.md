@@ -1,6 +1,7 @@
 # CHANGELOG.md
 
-## 2026-09-29 — Railway deploy path
+## 2026-09-29 — Free no-card deploy path
+- `DEPLOY-FREE.md`: Quaxly (bot, 24/7) + public Lavalink SG node (music, no Java hosting). `.env.example` documents the public node.
 - `DEPLOY-RAILWAY.md`: 2 services + private network (`lavalink.railway.internal:2333`), trial $5 notes.
 - `Dockerfile` (bot, slim) + `DEPLOY-HF.md`: 2 Spaces (bot + lavalink), secrets via Space Variables, `PORT=7860`.
 - `bot.py`: `/help` สรุปวิธีใช้ (คุย/agent/เพลง/pagination/admin), ephemeral.
