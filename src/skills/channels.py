@@ -215,6 +215,55 @@ def _clean_name(name: str) -> str:
     return str(name or "").strip().lower().replace(" ", "-")[:100]
 
 
+INVISIBLE_CHARS = " \t⁠⁤⁣⁠﻿ "
+
+
+def extract_layout(text: str) -> list[dict]:
+    """Parse a pasted layout ([Category: X] + Text/Voice Channels lines) into
+    restructureServer layout. Works even when the LLM can't build the JSON."""
+    import re as _re
+
+    blocks, cur, mode = [], None, None
+
+    def push_block():
+        if cur and cur.get("name") and (cur.get("text") or cur.get("voice")):
+            name_low = cur["name"].lower()
+            if "admin" in name_low and "private" not in cur:
+                cur["private"] = True
+            blocks.append(cur)
+
+    def add_names(chunk: str, mode: str):
+        for part in _re.split(r"[,，\n]", chunk):
+            p = part.strip(INVISIBLE_CHARS).strip("•⁠- ")
+            if not p or p in ("(ไม่มี)", "(none)", "-", "ไม่มี"):
+                continue
+            cur[mode].append(p)
+
+    for raw_line in (text or "").splitlines():
+        line = raw_line.strip(INVISIBLE_CHARS)
+        if not line:
+            continue
+        if _re.match(r"(?i)^\s*[^\w]*(\d+\.\s*)?(\[)?\s*(category|หมวด)", line):
+            push_block()
+            name = line.split(":", 1)[1] if ":" in line else line
+            name = _re.sub(r"^[\d\.\)\]\[\s📌💬💻🎮⚙️]+", "", name).strip(" []")
+            cur = {"name": name.strip(), "text": [], "voice": []}
+            mode = None
+        elif cur is not None and "voice" in line.lower():
+            mode = "voice"
+            add_names(line.split(":", 1)[1] if ":" in line else "", mode)
+        elif cur is not None and "text" in line.lower():
+            mode = "text"
+            add_names(line.split(":", 1)[1] if ":" in line else "", mode)
+        elif cur is not None and mode:
+            if len(line) > 32:  # prose, not a channel name — stop consuming
+                mode = None
+                continue
+            add_names(line, mode)
+    push_block()
+    return blocks
+
+
 async def _create_category(guild, params, message):
     name = (params.get("name") or "").strip()
     if not name:
@@ -258,13 +307,17 @@ async def _restructure(guild, params, message):
     for block in layout[:8]:  # safety cap
         if not isinstance(block, dict) or not block.get("name"):
             continue
-        cat = await find_channel(
-            guild, block["name"], kinds=(discord.ChannelType.category,))
-        if not cat:
-            cat = await guild.create_category(
-                block["name"].strip(),
-                reason=f"restructureServer by AI bot for {message.author}")
-            created.append(f"📁 {cat.name}")
+        try:
+            cat = await find_channel(
+                guild, block["name"], kinds=(discord.ChannelType.category,))
+            if not cat:
+                cat = await guild.create_category(
+                    block["name"].strip(),
+                    reason=f"restructureServer by AI bot for {message.author}")
+                created.append(f"📁 {cat.name}")
+        except discord.HTTPException:
+            skipped.append(f"{block.get('name')} (สร้างหมวดไม่ได้)")
+            continue
         if block.get("private"):
             ow = dict(cat.overwrites)
             ow[guild.default_role] = discord.PermissionOverwrite(view_channel=False)

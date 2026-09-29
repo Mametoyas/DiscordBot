@@ -35,4 +35,22 @@ async def plan(user_text: str, message, prefetch: dict | None = None) -> dict:
         if key not in seen:
             seen.add(key)
             deduped.append(a)
+
+    # Fallback: pasted layout the LLM couldn't turn into JSON — parse it directly.
+    # (e.g. "[Category: X] Text Channels: a, b / Voice Channels: c" blocks)
+    has_layout_action = any(
+        a["skill"] == "restructureServer" and a["params"].get("layout")
+        for a in deduped
+    )
+    if not has_layout_action:
+        try:
+            from src.skills.channels import extract_layout
+
+            layout = extract_layout(user_text)
+        except Exception:
+            layout = []
+        if layout:
+            deduped.insert(0, {"skill": "restructureServer", "params": {"layout": layout}})
+            log.info("[Agent/Plan] layout extracted from message: %d categories", len(layout))
+
     return {"reasoning": parsed.get("reasoning", ""), "actions": deduped}
