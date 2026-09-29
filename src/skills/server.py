@@ -1,4 +1,4 @@
-"""Server/misc skills (5): info/edit/search/send/snipe."""
+"""Server/misc skills (6): info/edit/search/send/snipe/setup."""
 
 import discord
 
@@ -153,4 +153,60 @@ register(Skill(
     description="Shows the most recently deleted message in a channel.",
     params={"channelName": "string (optional) - Defaults to current channel."},
     execute=_get_snipe,
+))
+
+
+async def _setup_server(guild, params, message):
+    """Create a standard layout (never deletes anything, skips existing)."""
+    style = str(params.get("style", "community")).lower()
+    if "study" in style or "เรียน" in style:
+        plan = [("general", "text"), ("study-room", "text"),
+                ("resources", "text"), ("welcome", "text"), ("Study Lounge", "voice")]
+    elif "game" in style or "เกม" in style:
+        plan = [("general", "text"), ("looking-for-party", "text"),
+                ("clips", "text"), ("welcome", "text"), ("Game Lobby", "voice")]
+    else:
+        plan = [("general", "text"), ("rules", "text"), ("welcome", "text"),
+                ("Chill Lounge", "voice")]
+    made, skipped = [], []
+    welcome_ch = None
+    for name, kind in plan:
+        exists = find_channel(guild, name)
+        if exists:
+            skipped.append(name)
+            if name == "welcome":
+                welcome_ch = exists
+            continue
+        if kind == "voice":
+            ch = await guild.create_voice_channel(
+                name, reason=f"setupServer by AI bot for {message.author}")
+        else:
+            ch = await guild.create_text_channel(
+                name, reason=f"setupServer by AI bot for {message.author}")
+        made.append(name)
+        if name == "welcome":
+            welcome_ch = ch
+    if welcome_ch and isinstance(welcome_ch, discord.TextChannel):
+        try:
+            await welcome_ch.send(
+                f"🎉 ยินดีต้อนรับสู่ **{guild.name}**!\n"
+                "• เริ่มที่ห้อง rules อ่านกติกาก่อนนะ\n"
+                "• คุยเล่นที่ห้อง general\n"
+                "• อยากคุยเสียง เข้าห้องเสียงด้านล่างได้เลย")
+        except discord.HTTPException:
+            pass
+    parts = []
+    if made:
+        parts.append("สร้างแล้ว: " + ", ".join(f"#{m}" for m in made))
+    if skipped:
+        parts.append("มีอยู่แล้ว ข้าม: " + ", ".join(f"#{s}" for s in skipped))
+    return "\n".join(parts) or "ไม่มีอะไรต้องทำ"
+
+
+register(Skill(
+    name="setupServer",
+    description="Sets up a standard channel layout (general, rules, welcome + voice lounge) with a welcome message. Never deletes anything, skips existing channels.",
+    params={"style": "string (optional) - community (default), gaming, or study."},
+    execute=_setup_server,
+    required_permissions=["manage_channels"],
 ))
