@@ -69,6 +69,11 @@ async def on_ready():
 
 
 @client.event
+async def on_wavelink_node_ready(payload):
+    log.info(f"Lavalink node ready ({getattr(payload.node, 'identifier', '?')})")
+
+
+@client.event
 async def on_wavelink_track_end(payload):
     """Autoplay is OFF — advance the queue only on natural finish."""
     try:

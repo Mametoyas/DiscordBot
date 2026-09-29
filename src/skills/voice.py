@@ -13,9 +13,29 @@ from src import config
 
 def _node_ready() -> bool:
     try:
-        return bool(wavelink.Pool.nodes)
+        nodes = list((wavelink.Pool.nodes or {}).values())
     except AttributeError:
         return False
+    for n in nodes:
+        try:
+            if n.status is wavelink.NodeStatus.CONNECTED:
+                return True
+        except AttributeError:
+            pass
+    return False
+
+
+async def _wait_node(timeout: float = 20.0):
+    """รอ node ต่อติด (wavelink reconnect เองเมื่อหลุด) เกินเวลา = error ภาษาคน"""
+    import asyncio
+    import time as _t
+
+    start = _t.monotonic()
+    while _t.monotonic() - start < timeout:
+        if _node_ready():
+            return
+        await asyncio.sleep(0.5)
+    raise ValueError("เซิร์ฟเวอร์เพลงกำลังต่อใหม่ — รอ ~30 วิแล้วสั่งอีกที")
 
 
 def _require_ready():
@@ -34,6 +54,7 @@ async def _ensure_player(guild: discord.Guild, requester: discord.Member,
                           channel_name: str = "") -> wavelink.Player:
     """requester = Member (has .voice). Shared by mention-skills and slash commands."""
     _require_ready()
+    await _wait_node()
     player = _player(guild)
     if player:
         return player
@@ -291,7 +312,11 @@ async def do_queue(guild: discord.Guild) -> str:
 
 async def search_choices(query: str, limit: int = 8) -> list[tuple[str, str]]:
     """(label, value) pairs for /play autocomplete. Empty on any failure."""
-    if len(query.strip()) < 2 or not _node_ready():
+    if len(query.strip()) < 2:
+        return []
+    try:
+        await _wait_node(timeout=3.0)  # autocomplete ต้องตอบใน 3 วิ
+    except Exception:
         return []
     try:
         tracks = await wavelink.Playable.search(query.strip(), source="ytsearch")
