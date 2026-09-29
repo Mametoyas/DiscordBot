@@ -1,6 +1,7 @@
 # CHANGELOG.md
 
-## 2026-09-29 — /help
+## 2026-09-29 — HF deploy path (no card needed)
+- `Dockerfile` (bot, slim) + `DEPLOY-HF.md`: 2 Spaces (bot + lavalink), secrets via Space Variables, `PORT=7860`.
 - `bot.py`: `/help` สรุปวิธีใช้ (คุย/agent/เพลง/pagination/admin), ephemeral.
 - `voice.py` refactored: skills delegate to public `do_*` core, shared with slash.
 - `bot.py`: `/play` (autocomplete suggest from Lavalink, ≤25 choices), `/skip`, `/stop`, `/queue`, `/leave`. Guild-only.

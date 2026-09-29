@@ -61,3 +61,4 @@ Local `http://localhost:8080` · Render service URL. Online pill, model/keys/ser
 ## Deploy
 
 Render → New → Blueprint → select repo → set env vars → Deploy. Full steps in `DEPLOY.md`.
+No card? Use Hugging Face Spaces (free, 2 Spaces) — see `DEPLOY-HF.md`.
