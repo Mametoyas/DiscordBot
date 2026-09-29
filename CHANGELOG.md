@@ -1,6 +1,7 @@
 # CHANGELOG.md
 
-## 2026-09-29 — Layout parser fallback
+## 2026-09-29 — moveAllMembers (38 skills)
+- `members.py`: `moveAllMembers` (ย้ายยกห้องใน action เดียว ไม่ต้องระบุชื่อ).
 - `channels.py`: `extract_layout()` parses pasted `[Category:]` blocks (both layouts tried).
 - `planner.py`: injects `restructureServer` with extracted layout when the LLM misses it.
 - `editChannel`: `private` (hide/unhide from @everyone) + `allowRoles` (grant view/send/connect).

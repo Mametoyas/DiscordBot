@@ -1,4 +1,4 @@
-"""Member skills (5): info/nickname/move/mute/deafen."""
+"""Member skills (6): info/nickname/move/move-all/mute/deafen."""
 
 import discord
 
@@ -79,6 +79,45 @@ register(Skill(
     execute=_move_member,
     required_permissions=["move_members"],
     targets_member=True,
+))
+
+
+async def _move_all(guild, params, message):
+    src = await find_channel(
+        guild, params.get("fromChannel", ""),
+        kinds=(discord.ChannelType.voice, discord.ChannelType.stage_voice))
+    if not src:
+        raise ValueError(f"ไม่เจอห้องเสียง \"{params.get('fromChannel')}\"")
+    dst = await find_channel(
+        guild, params.get("toChannel", ""),
+        kinds=(discord.ChannelType.voice, discord.ChannelType.stage_voice))
+    if not dst:
+        raise ValueError(f"ไม่เจอห้องเสียง \"{params.get('toChannel')}\"")
+    members = list(src.members)
+    if not members:
+        return f"ห้อง {src.name} ว่างอยู่ ไม่มีใครให้ย้าย"
+    moved, failed = [], []
+    for m in members:
+        try:
+            await m.move_to(dst, reason=f"moveAllMembers by AI bot for {message.author}")
+            moved.append(m.display_name)
+        except discord.HTTPException:
+            failed.append(m.display_name)
+    out = [f"ย้าย {len(moved)} คนไปห้อง {dst.name}: " + ", ".join(moved)]
+    if failed:
+        out.append("ย้ายไม่ได้: " + ", ".join(failed))
+    return "\n".join(out)
+
+
+register(Skill(
+    name="moveAllMembers",
+    description="Moves EVERYONE from one voice channel to another in one call (no need to name members).",
+    params={
+        "fromChannel": "string - Source voice channel name/mention/ID.",
+        "toChannel": "string - Target voice channel name/mention/ID.",
+    },
+    execute=_move_all,
+    required_permissions=["move_members"],
 ))
 
 
