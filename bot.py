@@ -95,6 +95,76 @@ async def ask_cmd(interaction: discord.Interaction, question: str):
         await interaction.followup.send(f"❌ เกิดข้อผิดพลาด: {e}")
 
 
+async def _play_autocomplete(interaction: discord.Interaction, current: str):
+    from src.skills import voice as _v
+
+    try:
+        pairs = await _v.search_choices(current)
+    except Exception:
+        pairs = []
+    return [app_commands.Choice(name=label, value=value) for label, value in pairs][:25]
+
+
+@tree.command(name="play", description="เปิดเพลง (พิมพ์ชื่อแล้วเลือกจาก suggest)")
+@app_commands.describe(query="ชื่อเพลงหรือลิงก์ YouTube")
+@app_commands.autocomplete(query=_play_autocomplete)
+async def play_cmd(interaction: discord.Interaction, query: str):
+    from src.skills import voice as _v
+
+    if interaction.guild is None:
+        await interaction.response.send_message("❌ ใช้ใน server เท่านั้น", ephemeral=True)
+        return
+    await interaction.response.defer(thinking=True)
+    try:
+        result = await _v.do_play(interaction.guild, interaction.user, query)
+        await interaction.followup.send(str(result))
+    except Exception as e:
+        await interaction.followup.send(f"❌ {e}")
+
+
+@tree.command(name="skip", description="ข้ามไปเพลงถัดไป")
+async def skip_cmd(interaction: discord.Interaction):
+    from src.skills import voice as _v
+
+    if interaction.guild is None:
+        await interaction.response.send_message("❌ ใช้ใน server เท่านั้น", ephemeral=True)
+        return
+    try:
+        await interaction.response.send_message(str(await _v.do_skip(interaction.guild)))
+    except Exception as e:
+        await interaction.response.send_message(f"❌ {e}", ephemeral=True)
+
+
+@tree.command(name="stop", description="หยุดเพลง + ล้างคิว")
+async def stop_cmd(interaction: discord.Interaction):
+    from src.skills import voice as _v
+
+    if interaction.guild is None:
+        await interaction.response.send_message("❌ ใช้ใน server เท่านั้น", ephemeral=True)
+        return
+    await interaction.response.send_message(str(await _v.do_stop(interaction.guild)))
+
+
+@tree.command(name="queue", description="ดูคิวเพลง")
+async def queue_cmd(interaction: discord.Interaction):
+    from src.skills import voice as _v
+
+    if interaction.guild is None:
+        await interaction.response.send_message("❌ ใช้ใน server เท่านั้น", ephemeral=True)
+        return
+    await interaction.response.send_message(str(await _v.do_queue(interaction.guild)))
+
+
+@tree.command(name="leave", description="ให้บอทออกจากห้องเสียง")
+async def leave_cmd(interaction: discord.Interaction):
+    from src.skills import voice as _v
+
+    if interaction.guild is None:
+        await interaction.response.send_message("❌ ใช้ใน server เท่านั้น", ephemeral=True)
+        return
+    await interaction.response.send_message(str(await _v.do_leave(interaction.guild)))
+
+
 def _is_owner(interaction: discord.Interaction) -> bool:
     return interaction.guild is not None and interaction.user.id == interaction.guild.owner_id
 

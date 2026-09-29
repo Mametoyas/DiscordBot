@@ -44,4 +44,4 @@ def required_of(skill: Skill) -> list[str]:
 
 
 # Import modules so their @register calls run. Order = catalog order.
-from . import channels, roles, members, moderation, emojis, invites, server  # noqa: E402,F401
+from . import channels, roles, members, moderation, emojis, invites, server, voice  # noqa: E402,F401

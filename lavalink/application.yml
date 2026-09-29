@@ -1,0 +1,25 @@
+# Minimal Lavalink v4 config. Secrets via env (Render sets them).
+# If YouTube starts 403ing, the youtube-plugin needs a PO token — see DEPLOY.md.
+server:
+  port: ${PORT:2333}
+  address: 0.0.0.0
+
+lavalink:
+  server:
+    password: ${LAVALINK_PASSWORD:youshallnotpass}
+    sources:
+      youtube: true
+      bandcamp: true
+      soundcloud: true
+      twitch: true
+      vimeo: true
+      http: true
+      local: false
+    youtubeSearchEnabled: true
+    soundcloudSearchEnabled: true
+    youtubePlaylistLoadLimit: 6
+    playerUpdateInterval: 5
+    bufferDurationMs: 400
+    opusEncodingQuality: 10
+    resamplingQuality: LOW
+    trackStuckThresholdMs: 10000

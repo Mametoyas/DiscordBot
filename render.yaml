@@ -16,5 +16,16 @@ services:
         sync: false
       - key: ADMIN_TOKEN
         sync: false
+      - key: LAVALINK_HOST
+        value: https://discord-lavalink.onrender.com
+      - key: LAVALINK_PASSWORD
+        sync: false
       - key: PYTHON_VERSION
         value: 3.11.9
+  - type: web
+    name: discord-lavalink
+    runtime: docker
+    dockerfilePath: ./lavalink/Dockerfile
+    envVars:
+      - key: LAVALINK_PASSWORD
+        sync: false
