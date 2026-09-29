@@ -311,12 +311,12 @@ async def do_queue(guild: discord.Guild) -> str:
 
 
 async def search_choices(query: str, limit: int = 8) -> list[tuple[str, str]]:
-    """(label, value) pairs for /play autocomplete. Empty on any failure."""
-    if len(query.strip()) < 2:
-        return []
-    try:
-        await _wait_node(timeout=3.0)  # autocomplete ต้องตอบใน 3 วิ
-    except Exception:
+    """(label, value) pairs for /play autocomplete. Empty on any failure.
+
+    Must answer within ~3s (Discord kills slow autocomplete with 10062),
+    so NEVER wait here — search only if a node is already CONNECTED.
+    """
+    if len(query.strip()) < 2 or not _node_ready():
         return []
     try:
         tracks = await wavelink.Playable.search(query.strip(), source="ytsearch")
