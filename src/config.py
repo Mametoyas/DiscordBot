@@ -26,10 +26,6 @@ AUTO_REPLY_CHANNEL_IDS = {
 HISTORY_LEN = int(os.getenv("HISTORY_LEN", "10"))
 BOT_NAME = os.getenv("BOT_NAME", "")
 
-# Lavalink music server (empty = voice skills report "not configured")
-LAVALINK_HOST = os.getenv("LAVALINK_HOST", "").rstrip("/")
-LAVALINK_PASSWORD = os.getenv("LAVALINK_PASSWORD", "")
-
 SYSTEM_PROMPT = os.getenv(
     "SYSTEM_PROMPT",
     "You are a helpful Discord AI assistant. Reply concisely in the user's language (default Thai).",

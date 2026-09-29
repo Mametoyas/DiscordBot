@@ -16,7 +16,7 @@
 | 8 | discord.py vs discord.js Components V2 (paginated UIs, containers)? | discord.py `View` buttons: `src/handler/paginator.py` (◀ n/N ▶, author-only, 120s) for any reply spanning pages | Line-boundary split so list rows never break; containers/embeds still plain text. |
 | 9 | Where does `@Bot` mention go — chat or agent? | Guild mention → **agent**; DM/auto-channel/`/ask` → **chat** | Preserves req-3 chat modes while giving server-management powers on mention. Empty mention → greeting, 0 LLM (same as Node handler). |
 | 10 | Agent Skill location? | Global `~/.agents/skills/discord-bot-agent/` (validated ✅) | Reusable across projects; repo keeps the Python runtime. Init via skill-creator `init-skill.mjs`, references linked with relative paths. |
-| 11 | Music: yt-dlp vs Lavalink? | Lavalink v4 (separate Render docker service) + `wavelink` client, autoplay OFF + manual queue advance | Stable on datacenter IPs; no FFmpeg/PyNaCl on bot. youtube-plugin 1.18.2 pinned in `lavalink/Dockerfile`. Same `LAVALINK_PASSWORD` on both services. |
+| 11 | Music? | **Removed 2026-09-29** (was Lavalink v4 + wavelink; public nodes too flaky, RAM too tight) | Code deleted (`voice.py`, `lavalink/`, music slash); scope back to no-music. Re-add from git history (`music` branch) if self-hosting later. |
 
 ## FAQ
 

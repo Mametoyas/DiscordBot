@@ -1,5 +1,9 @@
 # CHANGELOG.md
 
+## 2026-09-29 — Music removed (back to 34 skills)
+- Deleted `src/skills/voice.py`, `lavalink/`, music slash (`/play`…), Lavalink wiring, `wavelink/PyNaCl/davey` deps, `LAVALINK_*` config. Reason: public nodes unreliable + 315MB RAM too tight. Music lives on in the `music` branch if needed later.
+- Planner scope: music out-of-scope again. Slash now 5: `/ask /help /model /addkey /llmstatus`.
+
 ## 2026-09-29 — ACLClouds guide (4-day renewal)
 - `DEPLOY-ACLCLOUDS.md`: free Python bot steps + renewal reminder + music env.
 - `DEPLOY-WAIFLY.md`: free Python host guide (File Manager upload, startup cmd, auto-restart).

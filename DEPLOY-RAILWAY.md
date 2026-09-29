@@ -1,5 +1,7 @@
 # DEPLOY-RAILWAY.md — Railway (trial $5 ไม่ต้องผูกบัตร, ไม่ sleep)
 
+> หมายเหตุ: ฟีเจอร์เพลงถูกถอดออกแล้ว — สร้างแค่ service บอท service เดียวพอ
+
 รัน 2 services ใน project เดียว คุยกันผ่าน private network (ไม่เปิดสู่เน็ต)
 
 ## 1. สร้าง project

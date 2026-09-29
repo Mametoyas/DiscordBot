@@ -1,5 +1,7 @@
 # DEPLOY.md — Render Runbook
 
+> หมายเหตุ: ฟีเจอร์เพลงถูกถอดออกแล้ว — ข้ามขั้นตอน Lavalink ทั้งหมด (service ที่ 2 + env `LAVALINK_*`)
+
 Target: `render.yaml` **web service** `discord-gemini-bot`, Python 3.11.9, `pip install -r requirements.txt` → `python bot.py` (Discord gateway + admin dashboard in one process, health check `/api/status`).
 
 ## Prerequisites

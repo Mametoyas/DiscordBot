@@ -1,5 +1,7 @@
 # DEPLOY-HF.md — Hugging Face Spaces (ฟรี, ไม่ต้องผูกบัตร)
 
+> หมายเหตุ: ฟีเจอร์เพลงถูกถอดออกแล้ว — สร้างแค่ Space บอท ข้าม Space Lavalink ไปได้เลย
+
 รัน 2 Spaces คู่กัน: `discord-bot` (Python) + `discord-lavalink` (Java).
 Render Blueprint ใช้ไม่ได้ถ้าไม่มีบัตร (Docker service บังคับ paid) — ทางนี้แทน
 

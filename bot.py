@@ -34,30 +34,10 @@ else:
 intents = discord.Intents.default()
 intents.message_content = True
 intents.guilds = True
-intents.voice_states = True  # music skills need to see voice channels
+intents.voice_states = True
 
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
-
-
-async def _connect_lavalink():
-    """Connect wavelink pool once (skipped if unconfigured)."""
-    import wavelink
-
-    if not config.LAVALINK_HOST or not config.LAVALINK_PASSWORD:
-        log.warning("LAVALINK_HOST/PASSWORD not set — voice skills disabled")
-        return
-    await _probe_lavalink()
-    if getattr(wavelink.Pool, "nodes", None):
-        return
-    try:
-        await wavelink.Pool.connect(
-            client=client,
-            nodes=[wavelink.Node(uri=config.LAVALINK_HOST, password=config.LAVALINK_PASSWORD)],
-        )
-        log.info(f"Lavalink connected ({config.LAVALINK_HOST})")
-    except Exception as e:
-        log.error(f"Lavalink connect failed: {e}")
 
 
 @client.event
@@ -68,45 +48,6 @@ async def on_ready():
         log.info("Slash commands synced (/ask)")
     except Exception as e:
         log.error(f"sync commands ล้มเหลว: {e}")
-    await _connect_lavalink()
-
-
-async def _probe_lavalink():
-    """One-shot REST check: OK / wrong password / unreachable. Narrows all failures to one line."""
-    import httpx
-
-    try:
-        async with httpx.AsyncClient(timeout=10) as c:
-            r = await c.get(config.LAVALINK_HOST.rstrip("/") + "/v4/info",
-                            headers={"Authorization": config.LAVALINK_PASSWORD})
-        if r.status_code == 200:
-            log.info("Lavalink probe: OK (host ติด, รหัสผ่านถูก)")
-        elif r.status_code in (401, 403):
-            log.error("Lavalink probe: รหัสผ่านผิด (401) — เช็ค LAVALINK_PASSWORD")
-        else:
-            log.warning(f"Lavalink probe: HTTP {r.status_code}")
-    except Exception as e:
-        log.error(f"Lavalink probe: ต่อ host ไม่ได้ ({type(e).__name__}) — node ดับหรือ network โดนบล็อก")
-
-
-@client.event
-async def on_wavelink_node_ready(payload):
-    log.info(f"Lavalink node ready ({getattr(payload.node, 'identifier', '?')})")
-
-
-@client.event
-async def on_wavelink_track_end(payload):
-    """Autoplay is OFF — advance the queue only on natural finish."""
-    try:
-        if getattr(payload, "reason", "") != "finished":
-            return
-        player = payload.player
-        if player is None:
-            return
-        nxt = player.queue.get()
-        await player.play(nxt)
-    except Exception:
-        pass  # empty queue or transient error — stay silent
 
 
 @tree.command(name="ask", description="ถาม AI (Gemini)")
@@ -121,74 +62,15 @@ async def ask_cmd(interaction: discord.Interaction, question: str):
         await interaction.followup.send(f"❌ เกิดข้อผิดพลาด: {e}")
 
 
-async def _play_autocomplete(interaction: discord.Interaction, current: str):
-    from src.skills import voice as _v
-
-    try:
-        pairs = await _v.search_choices(current)
-    except Exception:
-        pairs = []
-    return [app_commands.Choice(name=label, value=value) for label, value in pairs][:25]
-
-
-@tree.command(name="play", description="เปิดเพลง (พิมพ์ชื่อแล้วเลือกจาก suggest)")
-@app_commands.describe(query="ชื่อเพลงหรือลิงก์ YouTube")
-@app_commands.autocomplete(query=_play_autocomplete)
-async def play_cmd(interaction: discord.Interaction, query: str):
-    from src.skills import voice as _v
-
-    if interaction.guild is None:
-        await interaction.response.send_message("❌ ใช้ใน server เท่านั้น", ephemeral=True)
-        return
-    await interaction.response.defer(thinking=True)
-    try:
-        result = await _v.do_play(interaction.guild, interaction.user, query)
-        await interaction.followup.send(str(result))
-    except Exception as e:
-        await interaction.followup.send(f"❌ {e}")
-
-
-@tree.command(name="skip", description="ข้ามไปเพลงถัดไป")
-async def skip_cmd(interaction: discord.Interaction):
-    from src.skills import voice as _v
-
-    if interaction.guild is None:
-        await interaction.response.send_message("❌ ใช้ใน server เท่านั้น", ephemeral=True)
-        return
-    try:
-        await interaction.response.send_message(str(await _v.do_skip(interaction.guild)))
-    except Exception as e:
-        await interaction.response.send_message(f"❌ {e}", ephemeral=True)
-
-
-@tree.command(name="stop", description="หยุดเพลง + ล้างคิว")
-async def stop_cmd(interaction: discord.Interaction):
-    from src.skills import voice as _v
-
-    if interaction.guild is None:
-        await interaction.response.send_message("❌ ใช้ใน server เท่านั้น", ephemeral=True)
-        return
-    await interaction.response.send_message(str(await _v.do_stop(interaction.guild)))
-
-
-@tree.command(name="queue", description="ดูคิวเพลง")
-async def queue_cmd(interaction: discord.Interaction):
-    from src.skills import voice as _v
-
-    if interaction.guild is None:
-        await interaction.response.send_message("❌ ใช้ใน server เท่านั้น", ephemeral=True)
-        return
-    await interaction.response.send_message(str(await _v.do_queue(interaction.guild)))
-
-
-@tree.command(name="leave", description="ให้บอทออกจากห้องเสียง")
-async def leave_cmd(interaction: discord.Interaction):
-    from src.skills import voice as _v
-
-    if interaction.guild is None:
-        await interaction.response.send_message("❌ ใช้ใน server เท่านั้น", ephemeral=True)
-        return
-    await interaction.response.send_message(str(await _v.do_leave(interaction.guild)))
+@tree.command(name="help", description="วิธีใช้บอททั้งหมด")
+async def help_cmd(interaction: discord.Interaction):
+    await interaction.response.send_message(
+        "**💬 คุย/ถาม** — `/ask คำถาม` · DM · หรือพิมพ์ในช่อง auto-reply\n"
+        "**🤖 สั่งจัดการ server** — `@Bot ...` เช่น `@Bot สร้างยศ VIP สีแดงให้ @ploy`, `@Bot timeout @เกรียน 10 นาที`, `@Bot list channels`\n"
+        "**📄 ลิสต์ยาวๆ** — มีปุ่ม ◀ ▶ เปลี่ยนหน้า (กดได้เฉพาะคนสั่ง)\n"
+        "**🧠 เจ้าของ server** — `/model` · `/addkey` · `/llmstatus`",
+        ephemeral=True,
+    )
 
 
 def _is_owner(interaction: discord.Interaction) -> bool:

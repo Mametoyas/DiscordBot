@@ -1,5 +1,7 @@
 # DEPLOY-WAIFLY.md — Waifly (ฟรีถาวร ไม่ใช้บัตร 300MB รัน 24/7)
 
+> หมายเหตุ: ฟีเจอร์เพลงถูกถอดออกแล้ว — ข้าม env `LAVALINK_*` ไปได้เลย
+
 Quaxly ไม่มี node ว่างให้ free tier —  Gerrit ใช้ Waifly แทน (panel Pterodactyl)
 
 ## 1. สร้าง server

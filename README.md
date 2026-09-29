@@ -2,13 +2,10 @@
 
 Discord AI bot using hosted **Gemini API** — no local LLM, no own server. Runs as a worker on **Render**.
 
-- `@Bot <คำสั่งจัดการ server>` → **agent** (plan → execute → summarize, 34 + 9 voice skills)
-- `@Bot เปิดเพลง <ชื่อเพลง>` → เข้าห้องเสียง + เล่นผ่าน Lavalink (queue/skip/stop ได้)
-- `@Bot` ลอยๆ → greeting (no LLM call)
+- `@Bot <คำสั่งจัดการ server>` → **agent** (plan → execute → summarize, 34 skills)
 - `@Bot` ลอยๆ → greeting (no LLM call)
 - `/ask <question>` → chat Q&A (Gemini)
 - `/help` → วิธีใช้ทั้งหมด (ephemeral, เห็นคนเดียว)
-- `/play <เพลง>` → เปิดเพลง **มี suggest ขณะพิมพ์** (Lavalink search) · `/skip` `/stop` `/queue` `/leave`
 - `/model [name]` → ดู/เปลี่ยน backbone runtime (owner only, มีผลทันทีไม่ต้อง restart)
 - `/addkey <key>` → เพิ่ม API key ตอนรัน (owner only, ephemeral)
 - `/llmstatus` → ดู model + จำนวน keys (owner only)
@@ -32,7 +29,7 @@ Also enable **MESSAGE CONTENT INTENT** in the Discord Developer Portal and invit
 - `bot.py` — thin entry: client + `/ask` + events (keeps `Procfile`/`render.yaml` as `python bot.py`)
 - `src/config.py` — env loading
 - `src/core/llm.py` — `GeminiRotator` + `generate_text()`
-- `src/skills/` — 43 skills in 8 modules + registry (`voice.py` = Lavalink music)
+- `src/skills/` — 34 skills in 7 modules + registry
 - `lavalink/` — Dockerfile + application.yml (Lavalink v4 + youtube-plugin 1.18.2)
 - `src/agent/` — `run()` = prefetch → planner → executor → summarizer + `language.py` + `composer.py`
 - `src/handler/message_handler.py` — mention/cooldown/greeting + agent/chat routing (+`paginator.py` ปุ่ม ◀ 1/3 ▶)

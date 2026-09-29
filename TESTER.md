@@ -32,8 +32,6 @@ Recommended next step for an agent: add `tests/test_rotator.py` mocking `httpx` 
    - [ ] Long list (many channels/roles) → single reply with ◀ 1/N ▶ buttons; only the requester can flip; buttons disable after ~2 min
    - [ ] `@Bot create text channel test-bot` → channel created (needs Manage Channels + hierarchy OK)
    - [ ] `@Bot` alone → greeting, no LLM call
-   - [ ] Voice (join a voice channel first): `@Bot เปิดเพลง <ชื่อเพลง>` → bot joins + plays; `@Bot คิวเพลง` → queue; `@Bot ข้าม` → next; `@Bot หยุดเพลง` → stops; `@Bot ออกห้อง` → leaves
-   - [ ] `/play` → พิมพ์ 2-3 ตัวอักษรมี suggest เพลงเด้ง, เลือกแล้วเล่นทันที; `/queue` `/skip` `/stop` `/leave` ทำงาน
    - [ ] `/ask ทดสอบ` → chat reply (slash path, `bot.py`)
    - [ ] Plain message in auto channel → chat reply; plain message elsewhere → silent
    - [ ] DM the bot → chat reply
