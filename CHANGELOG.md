@@ -1,6 +1,7 @@
 # CHANGELOG.md
 
-## 2026-09-29 — HF deploy path (no card needed)
+## 2026-09-29 — Railway deploy path
+- `DEPLOY-RAILWAY.md`: 2 services + private network (`lavalink.railway.internal:2333`), trial $5 notes.
 - `Dockerfile` (bot, slim) + `DEPLOY-HF.md`: 2 Spaces (bot + lavalink), secrets via Space Variables, `PORT=7860`.
 - `bot.py`: `/help` สรุปวิธีใช้ (คุย/agent/เพลง/pagination/admin), ephemeral.
 - `voice.py` refactored: skills delegate to public `do_*` core, shared with slash.
