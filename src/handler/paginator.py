@@ -49,7 +49,7 @@ class Paginator(discord.ui.View):
             return False
         return True
 
-    @discord.ui.button(label="◀", style=discord.ui.ButtonStyle.secondary)
+    @discord.ui.button(label="◀", style=discord.ButtonStyle.secondary)
     async def prev_btn(self, interaction: discord.Interaction, _btn):
         if not await self._guard(interaction):
             return
@@ -57,11 +57,11 @@ class Paginator(discord.ui.View):
         self._sync_labels()
         await interaction.response.edit_message(content=self._content(), view=self)
 
-    @discord.ui.button(label="1/1", style=discord.ui.ButtonStyle.secondary, disabled=True)
+    @discord.ui.button(label="1/1", style=discord.ButtonStyle.secondary, disabled=True)
     async def page_btn(self, interaction: discord.Interaction, _btn):
         pass  # page indicator, not clickable (stays disabled)
 
-    @discord.ui.button(label="▶", style=discord.ui.ButtonStyle.secondary)
+    @discord.ui.button(label="▶", style=discord.ButtonStyle.secondary)
     async def next_btn(self, interaction: discord.Interaction, _btn):
         if not await self._guard(interaction):
             return
