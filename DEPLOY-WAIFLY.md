@@ -11,8 +11,8 @@ Quaxly ไม่มี node ว่างให้ free tier —  Gerrit ใช�
 ## 2. ใส่ env (Variables / Environment tab)
 
 - `DISCORD_TOKEN`, `GEMINI_KEYS`, `GEMINI_MODEL=gemini-3.5-flash-lite`
-- `LAVALINK_HOST=https://sg.lavalink.heavencloud.in`
-- `LAVALINK_PASSWORD=heavencloud`
+- `LAVALINK_HOST=https://lavalink.jirayu.net`
+- `LAVALINK_PASSWORD=youshallnotpass`
 - (`ADMIN_TOKEN` ข้ามได้ — dashboard เปิดจากข้างนอกไม่ได้อยู่แล้ว)
 
 ## 3. เปิด + กันดับ

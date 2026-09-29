@@ -11,8 +11,8 @@
 1. Start command: `python bot.py` (dependencies จาก `requirements.txt`)
 2. Environment variables ใน panel:
    - `DISCORD_TOKEN`, `GEMINI_KEYS`, `GEMINI_MODEL=gemini-3.5-flash-lite`
-   - `LAVALINK_HOST=https://sg.lavalink.heavencloud.in`
-   - `LAVALINK_PASSWORD=heavencloud`
+   - `LAVALINK_HOST=https://lavalink.jirayu.net`
+   - `LAVALINK_PASSWORD=youshallnotpass`
 3. เปิด **automatic restart** (กัน crash แล้วดับ)
 
 ## 3. ตรวจงาน

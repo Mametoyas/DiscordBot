@@ -9,8 +9,8 @@ Render/Railway/Koyeb/HF-Docker ล้วนติดบัตร — ทาง�
 3. Start command: `python bot.py`
 4. Environment variables (ใส่ใน panel, ห้ามใส่ในโค้ด):
    - `DISCORD_TOKEN`, `GEMINI_KEYS`, `GEMINI_MODEL=gemini-3.5-flash-lite`
-   - `LAVALINK_HOST=https://sg.lavalink.heavencloud.in` (node สิงคโปร์, ใกล้ไทยสุด)
-   - `LAVALINK_PASSWORD=heavencloud`
+   - `LAVALINK_HOST=https://lavalink.jirayu.net` (node ไทย, ดีเลย์ต่ำสุด)
+   - `LAVALINK_PASSWORD=youshallnotpass`
    - `ADMIN_TOKEN` = สตริงยาวๆ (dashboard ใช้ไม่ได้บนนี้ — ข้ามได้)
 5. กด Start → ดู Logs มี `Logged in as` + `Lavalink connected` = จบ
 
@@ -22,9 +22,9 @@ Render/Railway/Koyeb/HF-Docker ล้วนติดบัตร — ทาง�
 
 | Node | HOST | PASSWORD | หมายเหตุ |
 |---|---|---|---|
-| 🇸🇬 Singapore (แนะนำ) | `https://sg.lavalink.heavencloud.in` | `heavencloud` | v4, ใกล้สุด |
-| 🇺🇸 USA (สำรอง) | `https://us.lavalink.heavencloud.in` | `heavencloud` | v4 |
-| 🇪🇺 Europe (สำรอง) | `https://eu.lavalink.heavencloud.in` | `heavencloud` | v4 |
+| 🇹🇭 ไทย (แนะนำ) | `https://lavalink.jirayu.net` | `youshallnotpass` | v4, ดีเลย์ต่ำสุด |
+| 🌍 สำรอง 1 | `https://lavalink-v4.triniumhost.com` | `free` | v4 |
+| 🌍 สำรอง 2 | `https://lavalinkv4.serenetia.com` | `https://seretia.link/discord` | v4 |
 
 node สาธารณะดับ/เปลี่ยนรหัสได้ — ถ้าเพลงเล่นไม่ได้ให้เช็คลิสต์สดที่ `lavalink-list.darrennathanael.com` หรือ `lavainfo.netlify.app` แล้วเปลี่ยนแค่ 2 env นี้ (ไม่ต้อง redeploy โค้ด ถ้า host มีปุ่ม restart: restart หนึ่งที)
 
