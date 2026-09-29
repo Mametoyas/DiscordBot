@@ -60,7 +60,7 @@ async def _move_member(guild, params, message):
         raise ValueError(f"I couldn't find anyone matching \"{params.get('memberId')}\" here.")
     target = None
     if params.get("channelId"):
-        target = find_channel(
+        target = await find_channel(
             guild, params["channelId"], kinds=(discord.ChannelType.voice, discord.ChannelType.stage_voice)
         )
         if not target:

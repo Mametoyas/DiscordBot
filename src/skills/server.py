@@ -46,7 +46,7 @@ async def _edit_server(guild, params, message):
         except (TypeError, ValueError):
             raise ValueError("verificationLevel must be 0-4.")
     if params.get("afkChannelName"):
-        ch = find_channel(
+        ch = await find_channel(
             guild, params["afkChannelName"],
             kinds=(discord.ChannelType.voice, discord.ChannelType.stage_voice),
         )
@@ -105,7 +105,7 @@ register(Skill(
 async def _send_message(guild, params, message):
     if not params.get("channelName") or not params.get("content"):
         raise ValueError("I need both a channel name and the message content to send.")
-    channel = find_channel(guild, params["channelName"], kinds=TEXT_KINDS)
+    channel = await find_channel(guild, params["channelName"], kinds=TEXT_KINDS)
     if not channel:
         raise ValueError(f"I couldn't find a text channel called \"{params['channelName']}\" here.")
     if getattr(channel, "nsfw", False) and not message.channel.nsfw:
@@ -138,7 +138,7 @@ register(Skill(
 async def _get_snipe(guild, params, message):
     channel = message.channel
     if params.get("channelName"):
-        channel = find_channel(guild, params["channelName"], kinds=TEXT_KINDS)
+        channel = await find_channel(guild, params["channelName"], kinds=TEXT_KINDS)
         if not channel:
             raise ValueError(f"I couldn't find a text channel called \"{params['channelName']}\".")
     q = get_snipes(channel.id)
@@ -171,7 +171,7 @@ async def _setup_server(guild, params, message):
     made, skipped = [], []
     welcome_ch = None
     for name, kind in plan:
-        exists = find_channel(guild, name)
+        exists = await find_channel(guild, name)
         if exists:
             skipped.append(name)
             if name == "welcome":

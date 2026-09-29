@@ -127,7 +127,7 @@ async def _clear_messages(guild, params, message):
         raise ValueError("Count must be between 1 and 100.")
     channel = message.channel
     if params.get("channelName"):
-        channel = find_channel(guild, params["channelName"], kinds=TEXT_KINDS)
+        channel = await find_channel(guild, params["channelName"], kinds=TEXT_KINDS)
         if not channel:
             raise ValueError(f"I couldn't find a text channel called \"{params['channelName']}\".")
     target_id = None

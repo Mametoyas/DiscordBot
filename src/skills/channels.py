@@ -23,7 +23,7 @@ async def _create_channel(guild, params, message):
     kwargs: dict = {"name": name, "reason": f"Created by AI bot for {message.author}"}
     warning = None
     if params.get("categoryName"):
-        cat = find_channel(guild, params["categoryName"], kinds=(discord.ChannelType.category,))
+        cat = await find_channel(guild, params["categoryName"], kinds=(discord.ChannelType.category,))
         if cat:
             kwargs["parent"] = cat
         else:
@@ -58,7 +58,7 @@ register(Skill(
 
 
 async def _delete_channel(guild, params, message):
-    ch = find_channel(guild, params.get("channelName", ""))
+    ch = await find_channel(guild, params.get("channelName", ""))
     if not ch:
         raise ValueError(f"I couldn't find a channel called \"{params.get('channelName')}\" here.")
     await ch.delete(reason=f"Deleted by AI bot for {message.author}")
@@ -75,7 +75,7 @@ register(Skill(
 
 
 async def _edit_channel(guild, params, message):
-    ch = find_channel(guild, params.get("currentName", ""))
+    ch = await find_channel(guild, params.get("currentName", ""))
     if not ch:
         raise ValueError(f"I couldn't find a channel called \"{params.get('currentName')}\" here.")
     kwargs: dict = {"reason": f"Edited by AI bot for {message.author}"}
@@ -86,7 +86,7 @@ async def _edit_channel(guild, params, message):
     if params.get("position") is not None:
         kwargs["position"] = int(params["position"])
     if params.get("parentCategory"):
-        cat = find_channel(guild, params["parentCategory"], kinds=(discord.ChannelType.category,))
+        cat = await find_channel(guild, params["parentCategory"], kinds=(discord.ChannelType.category,))
         if not cat:
             raise ValueError(f"I couldn't find a category called \"{params['parentCategory']}\".")
         kwargs["category"] = cat
@@ -169,7 +169,7 @@ register(Skill(
 
 
 async def _get_channel_info(guild, params, message):
-    ch = find_channel(guild, params.get("channelName", ""))
+    ch = await find_channel(guild, params.get("channelName", ""))
     if not ch:
         raise ValueError(f"I couldn't find a channel called \"{params.get('channelName')}\" here.")
     lines = [

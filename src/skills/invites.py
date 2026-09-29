@@ -5,7 +5,7 @@ from src.utils.fuzzy_match import TEXT_KINDS, find_channel
 
 
 async def _create_invite(guild, params, message):
-    channel = find_channel(guild, params.get("channelName", ""), kinds=TEXT_KINDS)
+    channel = await find_channel(guild, params.get("channelName", ""), kinds=TEXT_KINDS)
     if not channel:
         raise ValueError(f"I couldn't find a text channel called \"{params.get('channelName')}\".")
     invite = await channel.create_invite(
