@@ -1,6 +1,7 @@
 # CHANGELOG.md
 
-## 2026-09-29 — Waifly fallback (Quaxly full)
+## 2026-09-29 — ACLClouds guide (4-day renewal)
+- `DEPLOY-ACLCLOUDS.md`: free Python bot steps + renewal reminder + music env.
 - `DEPLOY-WAIFLY.md`: free Python host guide (File Manager upload, startup cmd, auto-restart).
 - `DEPLOY-FREE.md`: Quaxly (bot, 24/7) + public Lavalink SG node (music, no Java hosting). `.env.example` documents the public node.
 - `DEPLOY-RAILWAY.md`: 2 services + private network (`lavalink.railway.internal:2333`), trial $5 notes.
