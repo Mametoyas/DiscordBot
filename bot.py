@@ -22,6 +22,8 @@ from src.web import server as webadmin
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("gemini-bot")
+# httpx logs full request URLs at INFO — and our URLs contain ?key=... — silence it
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 if config.GEMINI_KEYS:
     llm.configure(config.GEMINI_KEYS, config.GEMINI_MODEL, config.SYSTEM_PROMPT)
