@@ -1,6 +1,8 @@
 # CHANGELOG.md
 
-## 2026-09-29 — Channel privacy (private + allowRoles)
+## 2026-09-29 — Layout parser fallback
+- `channels.py`: `extract_layout()` parses pasted `[Category:]` blocks (both layouts tried).
+- `planner.py`: injects `restructureServer` with extracted layout when the LLM misses it.
 - `editChannel`: `private` (hide/unhide from @everyone) + `allowRoles` (grant view/send/connect).
 - `restructureServer`: per-block `private:true` (ADMIN ONLY pattern; children inherit).
 - `channels.py`: `restructureServer` (whole category/channel layout in ONE action — bypasses 5-action cap; creates missing, moves existing, never deletes) + `createCategory`. Planner routes big layout requests here.
