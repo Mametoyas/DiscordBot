@@ -19,6 +19,7 @@ from src.core import llm
 from src.handler import message_handler
 from src.utils import snipe_manager
 from src.web import server as webadmin
+from src.web.server import MODEL_CHOICES
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("gemini-bot")
@@ -71,13 +72,47 @@ async def help_cmd(interaction: discord.Interaction):
         "**💬 คุย/ถาม** — `/ask คำถาม` · DM · หรือพิมพ์ในช่อง auto-reply\n"
         "**🤖 สั่งจัดการ server** — `@Bot ...` เช่น `@Bot สร้างยศ VIP สีแดงให้ @ploy`, `@Bot timeout @เกรียน 10 นาที`, `@Bot list channels`\n"
         "**📄 ลิสต์ยาวๆ** — มีปุ่ม ◀ ▶ เปลี่ยนหน้า (กดได้เฉพาะคนสั่ง)\n"
-        "**🧠 เจ้าของ server** — `/model` · `/addkey` · `/llmstatus`",
+        "**🧠 เจ้าของ server** — `/models list` · `/models set` · `/model` · `/addkey` · `/llmstatus`",
         ephemeral=True,
     )
 
 
 def _is_owner(interaction: discord.Interaction) -> bool:
     return interaction.guild is not None and interaction.user.id == interaction.guild.owner_id
+
+
+models_group = app_commands.Group(
+    name="models", description="ดู/เปลี่ยนโมเดล backbone ของ agent (เจ้าของ server เท่านั้น)")
+
+
+@models_group.command(name="list", description="ดูว่ามีโมเดลไหนให้ใช้บ้าง + ตัวที่ใช้อยู่")
+async def models_list_cmd(interaction: discord.Interaction):
+    if not _is_owner(interaction):
+        await interaction.response.send_message("❌ เฉพาะเจ้าของ server", ephemeral=True)
+        return
+    current = llm.get_client().status()["model"]
+    lines = [(f"✅ `{m}` ← ใช้อยู่" if m == current else f"▫️ `{m}`") for m in MODEL_CHOICES]
+    await interaction.response.send_message(
+        "🧠 โมเดลที่ใช้ได้:\n" + "\n".join(lines)
+        + "\n\nเปลี่ยนด้วย `/models set <ชื่อโมเดล>`",
+        ephemeral=True,
+    )
+
+
+@models_group.command(name="set", description="เปลี่ยนโมเดล backbone ของ agent ทันที")
+@app_commands.describe(name="ชื่อโมเดล — ดูตัวเลือกด้วย /models list")
+async def models_set_cmd(interaction: discord.Interaction, name: str):
+    if not _is_owner(interaction):
+        await interaction.response.send_message("❌ เฉพาะเจ้าของ server", ephemeral=True)
+        return
+    llm.get_client().set_model(name)
+    await interaction.response.send_message(
+        f"✅ เปลี่ยน backbone เป็น `{name.strip()}` แล้ว (มีผลทันทีทั้ง @Bot และ /ask)",
+        ephemeral=True,
+    )
+
+
+tree.add_command(models_group)
 
 
 @tree.command(name="model", description="ดู/เปลี่ยนโมเดล Gemini (เจ้าของ server เท่านั้น)")

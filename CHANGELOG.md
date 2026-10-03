@@ -1,5 +1,8 @@
 # CHANGELOG.md
 
+## 2026-10-03 — /models list|set (owner)
+- `bot.py`: command group `/models` — `list` ดูโมเดลที่ใช้ได้ + ตัวปัจจุบัน, `set <name>` เปลี่ยน backbone runtime (ใช้ MODEL_CHOICES เดียวกับ dashboard).
+
 ## 2026-09-29 — setRolePermissions + summon mentions (39 skills)
 - `roles.py`: `setRolePermissions` (กำหนดสิทธิ์ยศ, `administrator` ได้เฉพาะ owner) + `permissions` ใน `createRole`.
 - `prompts.py`: เรียกคน (`เรียก X มา`) เป็น valid social action → ตอบพร้อม @-mention ให้โดน ping.
