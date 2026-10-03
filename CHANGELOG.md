@@ -1,5 +1,10 @@
 # CHANGELOG.md
 
+## 2026-10-03 — Supabase chat memory (per-user-in-channel)
+- `src/utils/chat_store.py` (new): Supabase REST via `httpx` (no new deps) — `get`/`add` keyed `(channel_id, user_id)`, retention prune; silent fallback to local deque on any failure.
+- `message_handler.py`: `ask_chat()` uses the store; `/ask` passes `interaction.user.id`. Agent path stays stateless.
+- `.env.example`: `SUPABASE_URL`/`SUPABASE_KEY`/`CHAT_KEEP_PAIRS`/`CHAT_RETENTION_DAYS` + setup steps; table SQL lives in `chat_store.SUPABASE_SETUP`.
+
 ## 2026-10-03 — /models list|set (owner)
 - `bot.py`: command group `/models` — `list` ดูโมเดลที่ใช้ได้ + ตัวปัจจุบัน, `set <name>` เปลี่ยน backbone runtime (ใช้ MODEL_CHOICES เดียวกับ dashboard).
 

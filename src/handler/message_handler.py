@@ -1,24 +1,23 @@
 """Discord adapter — mirrors discord-bot-agents/src/handler/messageHandler.js.
 
 Owns: mention parsing, per-user cooldown, empty-mention greeting (0 LLM),
-agent path (guild mentions), chat path (DM / auto-channel, per-channel
-history), and reply rendering (button paginator for long lists).
+agent path (guild mentions), chat path (DM / auto-channel, per-user
+memory via chat_store), and reply rendering (button paginator for long lists).
 """
 
 import logging
 import time
-from collections import defaultdict, deque
 
 import discord
 
 from src import config
 from src.agent import run as run_agent
 from src.core import llm
+from src.utils.chat_store import store as chat_store
 from .paginator import reply_paginated, split_pages
 
 log = logging.getLogger("gemini-bot")
 
-_histories: dict[int, deque] = defaultdict(lambda: deque(maxlen=config.HISTORY_LEN * 2))
 _agent_cooldowns: dict[int, float] = {}
 
 
@@ -27,20 +26,32 @@ def chunk(text: str, limit: int = 1900) -> list[str]:
     return split_pages(text, limit)
 
 
-def get_history(channel_id: int) -> list[dict]:
-    return list(_histories[channel_id])
+def get_history(channel_id: int, user_id: int | None = None) -> list[dict]:
+    """Sync peek at the local fallback copy (Supabase reads are async)."""
+    from src.utils.chat_store import _local
+
+    if user_id is None:
+        out: list[dict] = []
+        for (ch, _u), dq in _local.items():
+            if str(ch) == str(channel_id):
+                out.extend(dq)
+        return out
+    return list(_local.get((str(channel_id), str(user_id)), []))
 
 
-def push_history(channel_id: int, role: str, text: str):
-    _histories[channel_id].append({"role": role, "text": text[:2000]})
+def push_history(channel_id: int, role: str, text: str, user_id: int | None = None):
+    from src.utils.chat_store import _local
+
+    _local[(str(channel_id), str(user_id))].append({"role": role, "text": text[:2000]})
 
 
-async def ask_chat(channel_id: int, user_text: str) -> str:
-    """Chat Q&A with per-channel memory (DM / auto-channel / /ask)."""
-    msgs = get_history(channel_id) + [{"role": "user", "text": user_text}]
+async def ask_chat(channel_id: int, user_text: str, user_id: int | None = None) -> str:
+    """Chat Q&A with per-user-in-channel memory (DM / auto-channel / /ask)."""
+    msgs = await chat_store.get(channel_id, user_id) + [{"role": "user", "text": user_text}]
     reply = await llm.get_client().generate(msgs)
-    push_history(channel_id, "user", user_text)
-    push_history(channel_id, "model", reply)
+    guild_id = None
+    await chat_store.add(channel_id, user_id, "user", user_text, guild_id)
+    await chat_store.add(channel_id, user_id, "model", reply, guild_id)
     return reply
 
 
@@ -91,7 +102,10 @@ async def handle_message(message: discord.Message, client: discord.Client):
 
     async with message.channel.typing():
         try:
-            reply = await ask_chat(message.channel.id, f"{message.author.display_name}: {content}")
+            reply = await ask_chat(
+                message.channel.id, f"{message.author.display_name}: {content}",
+                message.author.id,
+            )
             await _reply_chunks(message, f"{message.author.mention} {reply}")
         except Exception as e:  # noqa: BLE001 — user-visible fallback
             log.exception("ask failed")
