@@ -39,6 +39,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.guilds = True
 intents.voice_states = True
+intents.members = True  # full member list — needed for name search (also toggle in portal)
 
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)

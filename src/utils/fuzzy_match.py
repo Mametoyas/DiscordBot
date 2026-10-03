@@ -15,6 +15,8 @@ INVISIBLE = re.compile(r"[\u200b-\u200d\u2060\ufeff ]")
 MENTION_RE = re.compile(r"<(?:#|@!?|@&|a?:\w+:)(\d+)>")
 PREFIXED_ID_RE = re.compile(r"^[#@&]!?(\d{16,20})$")
 SNOWFLAKE_RE = re.compile(r"^\d{16,20}$")
+# Thai honorifics users stick in front of names ("เรียกไอ้Novaมาหน่อย")
+THAI_PREFIX_RE = re.compile(r"^(ไอ้|อี|พี่|น้อง|คุณ|ท่าน|น้า|อา|ลุง|ป้า)\s*")
 
 
 def clean_input(value) -> str:
@@ -125,18 +127,24 @@ async def find_member(guild: discord.Guild, query: str):
             return None
     name = normalize_name(raw)
     low = name.lower()
-    for m in guild.members:
-        if m.name.lower() == low or m.display_name.lower() == low:
-            return m
+    candidates = [low]
+    stripped = THAI_PREFIX_RE.sub("", name).strip().lower()
+    if stripped and stripped != low:
+        candidates.append(stripped)
+    for cand in candidates:
+        for m in guild.members:
+            if m.name.lower() == cand or m.display_name.lower() == cand:
+                return m
     try:  # server-side username search (needs Server Members Intent)
         found = await guild.query_members(query=name, limit=1)
         if found:
             return found[0]
     except (discord.HTTPException, AttributeError):
         pass
-    for m in guild.members:
-        if low in m.display_name.lower() or low in m.name.lower():
-            return m
+    for cand in candidates:
+        for m in guild.members:
+            if cand in m.display_name.lower() or cand in m.name.lower():
+                return m
     return None
 
 

@@ -1,5 +1,9 @@
 # CHANGELOG.md
 
+## 2026-10-03 — member search fix
+- `bot.py`: `intents.members = True` (full member cache; needs portal toggle too).
+- `fuzzy_match.py`: strips Thai honorific prefixes (ไอ้/อี/พี่/น้อง/...) before matching, so "ไอ้Nova" finds Nova.
+
 ## 2026-10-03 — @Bot chat fallback (flexible mentions)
 - `agent/__init__.py`: no-action plan returns `reply=None` (skips summarize, saves 1 call).
 - `message_handler.py`: `reply=None` → free chat with per-user memory + capability-aware system prompt (playful, may guess/joke, remembers preferences) instead of stiff refusal. `ask_chat()` accepts `system=`.
