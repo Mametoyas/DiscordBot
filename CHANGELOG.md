@@ -1,5 +1,9 @@
 # CHANGELOG.md
 
+## 2026-10-03 — @Bot chat fallback (flexible mentions)
+- `agent/__init__.py`: no-action plan returns `reply=None` (skips summarize, saves 1 call).
+- `message_handler.py`: `reply=None` → free chat with per-user memory + capability-aware system prompt (playful, may guess/joke, remembers preferences) instead of stiff refusal. `ask_chat()` accepts `system=`.
+
 ## 2026-10-03 — Supabase chat memory (per-user-in-channel)
 - `src/utils/chat_store.py` (new): Supabase REST via `httpx` (no new deps) — `get`/`add` keyed `(channel_id, user_id)`, retention prune; silent fallback to local deque on any failure.
 - `message_handler.py`: `ask_chat()` uses the store; `/ask` passes `interaction.user.id`. Agent path stays stateless.

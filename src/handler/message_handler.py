@@ -45,14 +45,29 @@ def push_history(channel_id: int, role: str, text: str, user_id: int | None = No
     _local[(str(channel_id), str(user_id))].append({"role": role, "text": text[:2000]})
 
 
-async def ask_chat(channel_id: int, user_text: str, user_id: int | None = None) -> str:
+async def ask_chat(channel_id: int, user_text: str, user_id: int | None = None,
+                 system: str | None = None) -> str:
     """Chat Q&A with per-user-in-channel memory (DM / auto-channel / /ask)."""
     msgs = await chat_store.get(channel_id, user_id) + [{"role": "user", "text": user_text}]
-    reply = await llm.get_client().generate(msgs)
+    reply = await llm.get_client().generate(msgs, system=system or config.SYSTEM_PROMPT)
     guild_id = None
     await chat_store.add(channel_id, user_id, "user", user_text, guild_id)
     await chat_store.add(channel_id, user_id, "model", reply, guild_id)
     return reply
+
+
+def _mention_system(bot_name: str) -> str:
+    return (
+        f"You are {bot_name}, a friendly Discord bot talking directly to a user who mentioned you. "
+        "Reply concisely in the user's language (default Thai). Be playful when they are playful — "
+        "you may guess, joke, and chat freely like a friend.\n"
+        "You REMEMBER this user across restarts (per-user memory is automatic) — recall preferences "
+        "they told you, and never claim you can't remember.\n"
+        "You CAN do these things when asked (briefly offer, don't dump the list unprompted): manage "
+        "channels/categories/layouts, create/edit/permission roles, give/remove roles, move/mute/deafen "
+        "members, kick/ban/timeout, emojis, invites, server info/setup, switch your own AI model (owner only). "
+        "If they ask for a server action, say you'll do it once they phrase it as a command."
+    )
 
 
 async def _reply_chunks(message: discord.Message, text: str):
@@ -90,7 +105,19 @@ async def handle_message(message: discord.Message, client: discord.Client):
             async with message.channel.typing():
                 try:
                     result = await run_agent(content, message)
-                    await _reply_chunks(message, result["reply"])
+                    if result.get("reply") is None:
+                        # No server action planned -> chat freely (with memory)
+                        # instead of a stiff out-of-scope refusal.
+                        bot_name = client.user.display_name if client.user else "Bot"
+                        reply = await ask_chat(
+                            message.channel.id,
+                            f"{message.author.display_name}: {content}",
+                            message.author.id,
+                            system=_mention_system(bot_name),
+                        )
+                        await _reply_chunks(message, reply)
+                    else:
+                        await _reply_chunks(message, result["reply"])
                 except Exception as e:  # noqa: BLE001 — user-visible fallback
                     log.exception("agent failed")
                     await message.reply(f"❌ เกิดข้อผิดพลาด: {e}", mention_author=False)
