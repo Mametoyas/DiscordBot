@@ -48,6 +48,19 @@ create index if not exists chat_history_lookup
 
 _local: dict[tuple, deque] = defaultdict(lambda: deque(maxlen=config.HISTORY_LEN * 2))
 
+ALIAS_SETUP = """
+create table if not exists member_aliases (
+  guild_id text not null,
+  alias text not null,
+  user_id text not null,
+  set_by text,
+  created_at timestamptz default now(),
+  primary key (guild_id, alias)
+);
+"""
+
+_alias_local: dict[tuple, str] = {}
+
 
 def _cfg(key: str, default: str = "") -> str:
     import os
@@ -138,6 +151,91 @@ class ChatStore:
             )
         except Exception as e:  # noqa: BLE001
             log.warning("[ChatStore] prune failed: %s", e)
+
+    # ---- member aliases: custom nicknames the bot remembers per server ----
+
+    async def get_alias(self, guild_id, alias: str) -> str | None:
+        """Return the remembered user_id for a nickname, or None. Never raises."""
+        key = (str(guild_id), alias.strip().lower())
+        if not self.enabled:
+            return _alias_local.get(key)
+        try:
+            c = self._client_or_new()
+            r = await c.get(
+                f"{self.url}/rest/v1/member_aliases",
+                headers=self._headers(),
+                params={"guild_id": f"eq.{guild_id}", "alias": f"eq.{alias.strip()}",
+                        "select": "user_id", "limit": 1},
+            )
+            r.raise_for_status()
+            rows = r.json()
+            if rows:
+                _alias_local[key] = rows[0]["user_id"]
+                return rows[0]["user_id"]
+            return _alias_local.get(key)
+        except Exception as e:  # noqa: BLE001
+            log.warning("[ChatStore] get_alias failed: %s", e)
+            return _alias_local.get(key)
+
+    async def set_alias(self, guild_id, alias: str, user_id, set_by=None):
+        """Remember alias -> member for this server (upsert). Never raises."""
+        alias = alias.strip()
+        if not alias:
+            raise ValueError("ชื่อเล่นว่างเปล่า")
+        key = (str(guild_id), alias.lower())
+        _alias_local[key] = str(user_id)
+        if not self.enabled:
+            return
+        try:
+            c = self._client_or_new()
+            r = await c.post(
+                f"{self.url}/rest/v1/member_aliases?on_conflict=guild_id,alias",
+                headers={**self._headers(), "Prefer": "resolution=merge-duplicates,return=minimal"},
+                json=[{"guild_id": str(guild_id), "alias": alias,
+                       "user_id": str(user_id), "set_by": str(set_by) if set_by else None}],
+            )
+            r.raise_for_status()
+        except Exception as e:  # noqa: BLE001
+            log.warning("[ChatStore] set_alias failed (local copy kept): %s", e)
+
+    async def remove_alias(self, guild_id, alias: str) -> bool:
+        """Forget a nickname. Returns True if something was removed."""
+        key = (str(guild_id), alias.strip().lower())
+        had_local = _alias_local.pop(key, None) is not None
+        if not self.enabled:
+            return had_local
+        try:
+            c = self._client_or_new()
+            r = await c.delete(
+                f"{self.url}/rest/v1/member_aliases",
+                headers=self._headers(),
+                params={"guild_id": f"eq.{guild_id}", "alias": f"eq.{alias.strip()}"},
+            )
+            r.raise_for_status()
+            return True
+        except Exception as e:  # noqa: BLE001
+            log.warning("[ChatStore] remove_alias failed: %s", e)
+            return had_local
+
+    async def list_aliases(self, guild_id) -> list[dict]:
+        """All remembered nicknames for a server. Never raises."""
+        if not self.enabled:
+            return [{"alias": a, "user_id": u}
+                    for (g, a), u in sorted(_alias_local.items()) if g == str(guild_id)]
+        try:
+            c = self._client_or_new()
+            r = await c.get(
+                f"{self.url}/rest/v1/member_aliases",
+                headers=self._headers(),
+                params={"guild_id": f"eq.{guild_id}", "select": "alias,user_id",
+                        "order": "alias", "limit": 200},
+            )
+            r.raise_for_status()
+            return r.json()
+        except Exception as e:  # noqa: BLE001
+            log.warning("[ChatStore] list_aliases failed: %s", e)
+            return [{"alias": a, "user_id": u}
+                    for (g, a), u in sorted(_alias_local.items()) if g == str(guild_id)]
 
 
 store = ChatStore()

@@ -1,4 +1,4 @@
-"""Member skills (6): info/nickname/move/move-all/mute/deafen."""
+"""Member skills (8): info/nickname/move/move-all/mute/deafen/alias x2."""
 
 import discord
 
@@ -166,4 +166,50 @@ register(Skill(
     execute=_deafen_member,
     required_permissions=["deafen_members"],
     targets_member=True,
+))
+
+
+async def _set_alias(guild, params, message):
+    alias = (params.get("alias") or "").strip()
+    if not alias:
+        raise ValueError("บอกชื่อเล่นที่จะจำมาด้วย เช่น alias=ไอ้เสือ")
+    member = await find_member(guild, params.get("memberId", ""))
+    if not member:
+        raise ValueError(f"I couldn't find anyone matching \"{params.get('memberId')}\" here.")
+    from src.utils.chat_store import store as _chat_store
+
+    await _chat_store.set_alias(guild.id, alias, member.id, message.author.id)
+    return f"จำไว้แล้ว: **{alias}** = {member.mention}"
+
+
+register(Skill(
+    name="setMemberAlias",
+    description="Remembers a custom nickname for a member (per server). Later searches by that nickname find them.",
+    params={
+        "alias": "string - The nickname to remember (e.g. ไอ้เสือ).",
+        "memberId": "string - The ID, mention, or username of the member.",
+    },
+    execute=_set_alias,
+    required_permissions=["manage_nicknames"],
+))
+
+
+async def _remove_alias(guild, params, message):
+    alias = (params.get("alias") or "").strip()
+    if not alias:
+        raise ValueError("บอกชื่อเล่นที่จะลบมาด้วย")
+    from src.utils.chat_store import store as _chat_store
+
+    removed = await _chat_store.remove_alias(guild.id, alias)
+    if not removed:
+        raise ValueError(f"ไม่เคยจำชื่อ \"{alias}\" ไว้เลย")
+    return f"ลืมชื่อ **{alias}** แล้ว"
+
+
+register(Skill(
+    name="removeMemberAlias",
+    description="Forgets a remembered nickname for this server.",
+    params={"alias": "string - The nickname to forget."},
+    execute=_remove_alias,
+    required_permissions=["manage_nicknames"],
 ))

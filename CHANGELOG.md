@@ -1,5 +1,10 @@
 # CHANGELOG.md
 
+## 2026-10-03 — member aliases (41 skills)
+- `chat_store.py`: `member_aliases` table (SQL in `ALIAS_SETUP`) + `get/set/remove/list_aliases` with local fallback.
+- `fuzzy_match.py`: search order mention/ID → exact username/nick → remembered alias → server `query_members` → substring.
+- `members.py`: `setMemberAlias` / `removeMemberAlias` (needs Manage Nicknames). Planner routes "จำไว้ว่า X คือ @Y".
+
 ## 2026-10-03 — member search fix
 - `bot.py`: `intents.members = True` (full member cache; needs portal toggle too).
 - `fuzzy_match.py`: strips Thai honorific prefixes (ไอ้/อี/พี่/น้อง/...) before matching, so "ไอ้Nova" finds Nova.

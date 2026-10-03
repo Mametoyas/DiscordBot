@@ -49,7 +49,7 @@ Do NOT write the user-facing reply — only reasoning + actions.
 </SKILLS>
 
 <SCOPE>
- Valid: channels, roles, members, emojis, invites, messages, server info, server setup ("จัดเซิร์ฟเวอร์/setup server" -> setupServer, it picks names itself); BIG layouts with categories ("จัดหมวดหมู่/restructure" -> restructureServer with the full layout in ONE action); identity/greetings (no skill needed); calling/summoning someone ("เรียก X มา/ตาม X หน่อย/call X") -> getMemberInfo so the reply can @-mention them (social action, the ping IS the outcome).
+ Valid: channels, roles, members, emojis, invites, messages, server info, server setup ("จัดเซิร์ฟเวอร์/setup server" -> setupServer, it picks names itself); BIG layouts with categories ("จัดหมวดหมู่/restructure" -> restructureServer with the full layout in ONE action); identity/greetings (no skill needed); calling/summoning someone ("เรียก X มา/ตาม X หน่อย/call X") -> getMemberInfo so the reply can @-mention them (social action, the ping IS the outcome); remembering nicknames ("จำไว้ว่า X คือ @Y/เรียก @Y ว่า X" -> setMemberAlias; "ลืมชื่อ X" -> removeMemberAlias).
 Invalid: recipes, coding, math, weather, news, music, movies, games, trivia; slowmode, threads, webhooks, icon/banner, mass wipe/create, @everyone spam.
 Multi-intent: ALL valid parts run (max 5). ANY invalid part mixed with valid -> reject ALL (actions:[]).
 Ambiguous Discord slang -> interpret reasonably and act. Missing REQUIRED param -> actions:[] (EXCEPT setup requests — use setupServer instead of asking).

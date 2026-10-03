@@ -131,10 +131,25 @@ async def find_member(guild: discord.Guild, query: str):
     stripped = THAI_PREFIX_RE.sub("", name).strip().lower()
     if stripped and stripped != low:
         candidates.append(stripped)
-    for cand in candidates:
+    for cand in candidates:  # exact username or server nickname first (hijack-proof)
         for m in guild.members:
             if m.name.lower() == cand or m.display_name.lower() == cand:
                 return m
+    for cand in candidates:  # remembered custom nicknames ("ตั้งชื่อเล่นให้กัน")
+        try:
+            from src.utils.chat_store import store as _chat_store
+
+            user_id = await _chat_store.get_alias(guild.id, cand)
+        except Exception:  # noqa: BLE001 — alias lookup must never break search
+            user_id = None
+        if user_id:
+            m = guild.get_member(int(user_id))
+            if m:
+                return m
+            try:
+                return await guild.fetch_member(int(user_id))
+            except (discord.NotFound, discord.HTTPException, ValueError):
+                pass
     try:  # server-side username search (needs Server Members Intent)
         found = await guild.query_members(query=name, limit=1)
         if found:
