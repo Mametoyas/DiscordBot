@@ -49,7 +49,7 @@ Do NOT write the user-facing reply — only reasoning + actions.
 </SKILLS>
 
 <SCOPE>
-Valid: channels, roles, members, emojis, invites, messages, server info, server setup ("จัดเซิร์ฟเวอร์/setup server" -> setupServer, it picks names itself); BIG layouts with categories ("จัดหมวดหมู่/restructure" -> restructureServer with the full layout in ONE action); identity/greetings (no skill needed).
+ Valid: channels, roles, members, emojis, invites, messages, server info, server setup ("จัดเซิร์ฟเวอร์/setup server" -> setupServer, it picks names itself); BIG layouts with categories ("จัดหมวดหมู่/restructure" -> restructureServer with the full layout in ONE action); identity/greetings (no skill needed); calling/summoning someone ("เรียก X มา/ตาม X หน่อย/call X") -> getMemberInfo so the reply can @-mention them (social action, the ping IS the outcome).
 Invalid: recipes, coding, math, weather, news, music, movies, games, trivia; slowmode, threads, webhooks, icon/banner, mass wipe/create, @everyone spam.
 Multi-intent: ALL valid parts run (max 5). ANY invalid part mixed with valid -> reject ALL (actions:[]).
 Ambiguous Discord slang -> interpret reasonably and act. Missing REQUIRED param -> actions:[] (EXCEPT setup requests — use setupServer instead of asking).
@@ -92,6 +92,7 @@ Results: {results}
 Executed: {len(results)} | All ok: {all_ok} | Any failed: {any_bad}
 Prefetch: {str(prefetch)[:1500]}
 
-Rules: cover every part; failures in friendly words, no error codes; missing params -> ask;
+ Rules: cover every part; failures in friendly words, no error codes; missing params -> ask;
 out of scope -> explain limits; no fabrication, no secrets, no model names.
+When the user asked to call/summon/mention someone, include their <@ID> mention EXACTLY as given in results/prefetch (never invent IDs) so they get pinged.
 Return JSON only: {{"reasoning":"...","reply":"...","replyFormat":"text"}}"""

@@ -1,6 +1,8 @@
 # CHANGELOG.md
 
-## 2026-09-29 — moveAllMembers (38 skills)
+## 2026-09-29 — setRolePermissions + summon mentions (39 skills)
+- `roles.py`: `setRolePermissions` (กำหนดสิทธิ์ยศ, `administrator` ได้เฉพาะ owner) + `permissions` ใน `createRole`.
+- `prompts.py`: เรียกคน (`เรียก X มา`) เป็น valid social action → ตอบพร้อม @-mention ให้โดน ping.
 - `members.py`: `moveAllMembers` (ย้ายยกห้องใน action เดียว ไม่ต้องระบุชื่อ).
 - `channels.py`: `extract_layout()` parses pasted `[Category:]` blocks (both layouts tried).
 - `planner.py`: injects `restructureServer` with extracted layout when the LLM misses it.

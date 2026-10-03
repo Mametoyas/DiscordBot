@@ -1,4 +1,4 @@
-"""Role skills (7): create/delete/edit/list/info/assign/remove."""
+"""Role skills (8): create/delete/edit/permissions/list/info/assign/remove."""
 
 import discord
 
@@ -16,6 +16,29 @@ def _parse_colour(value) -> discord.Colour | None:
         return discord.Colour(int(s, 16))
 
 
+def _parse_permissions(guild, requester, value) -> discord.Permissions:
+    """Comma-separated discord permission flags -> Permissions (starts from none).
+
+    'administrator' is only grantable by the server owner.
+    """
+    perms = discord.Permissions.none()
+    names = [n.strip().lower() for n in str(value).split(",") if n.strip()]
+    if not names:
+        raise ValueError("No permissions given.")
+    valid = set(discord.Permissions.VALID_FLAGS)
+    unknown = [n for n in names if n not in valid]
+    if unknown:
+        raise ValueError(
+            f"Unknown permission(s): {', '.join(unknown)}. "
+            "Use Discord flag names like kick_members, manage_messages, connect, speak."
+        )
+    if "administrator" in names and requester.id != guild.owner_id:
+        raise ValueError("Only the server owner can grant the administrator permission.")
+    for n in names:
+        setattr(perms, n, True)
+    return perms
+
+
 async def _create_role(guild, params, message):
     name = params.get("name")
     if not name:
@@ -31,18 +54,21 @@ async def _create_role(guild, params, message):
         kwargs["hoist"] = bool(params["hoist"])
     if params.get("mentionable") is not None:
         kwargs["mentionable"] = bool(params["mentionable"])
+    if params.get("permissions"):
+        kwargs["permissions"] = _parse_permissions(guild, message.author, params["permissions"])
     role = await guild.create_role(**kwargs)
     return f"Role **{role.name}** created."
 
 
 register(Skill(
     name="createRole",
-    description="Creates a new role with optional color (hex), hoist, and mentionable settings.",
+    description="Creates a new role with optional color (hex), hoist, mentionable, and permissions settings.",
     params={
         "name": "string - role name",
         "color": "string (optional) - hex color like #FF0000",
         "hoist": "boolean (optional) - display separately",
         "mentionable": "boolean (optional) - allow mentions",
+        "permissions": "string (optional) - comma-separated permission flags e.g. kick_members,manage_messages (or 'administrator')",
         "reason": "string (optional) - audit log reason",
     },
     execute=_create_role,
@@ -98,6 +124,34 @@ register(Skill(
         "mentionable": "boolean (optional).",
     },
     execute=_edit_role,
+    required_permissions=["manage_roles"],
+))
+
+
+async def _set_role_permissions(guild, params, message):
+    role = find_role(guild, params.get("roleName", ""))
+    if not role:
+        raise ValueError(f"I couldn't find a role called \"{params.get('roleName')}\" here.")
+    if role.is_default() or role.managed:
+        raise ValueError(f"I can't change permissions of **{role.name}** (system-managed).")
+    if role.position >= guild.me.top_role.position:
+        raise ValueError(
+            f"I can't edit **{role.name}** — it sits above my highest role."
+        )
+    perms = _parse_permissions(guild, message.author, params.get("permissions", ""))
+    await role.edit(permissions=perms, reason=f"Permissions set by AI bot for {message.author}")
+    on = [n for n in discord.Permissions.VALID_FLAGS if getattr(perms, n)]
+    return f"Role **{role.name}** now has: {', '.join(on)}"
+
+
+register(Skill(
+    name="setRolePermissions",
+    description="Sets what a role is allowed to do (replaces its permission flags).",
+    params={
+        "roleName": "string - The name, mention, or ID of the role.",
+        "permissions": "string - comma-separated permission flags e.g. kick_members,manage_messages (or 'administrator', owner-only)",
+    },
+    execute=_set_role_permissions,
     required_permissions=["manage_roles"],
 ))
 
