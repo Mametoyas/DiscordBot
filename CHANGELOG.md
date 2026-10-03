@@ -1,5 +1,9 @@
 # CHANGELOG.md
 
+## 2026-10-03 — chat path sees server knowledge
+- `ask_chat(guild_id=)`: injects the author's remembered nicknames + matching shared facts into the system prompt (chat answers now agree with agent answers for everyone, not just the teacher).
+- Default `SYSTEM_PROMPT`: injected server blocks are authoritative; never claim no backend access. `/ask` passes guild id too.
+
 ## 2026-10-03 — discord-agent ports: shared memory + confirm + compression (44 skills)
 - Shared memory: Supabase `memories` (SQL in `chat_store.MEMORIES_SETUP`) + `rememberFact`/`recallFacts`/`forgetFact` skills (`src/skills/memory.py`); planner SCOPE routes จำไว้ว่า/ลืมเรื่อง; prefetch injects matching facts.
 - Confirmation gate (`src/utils/confirm.py`, from discord-agent's tools_permissions): kick/ban/clearMessages/deleteChannel ask ✅/❌ (requester-only, 60s timeout = cancel). `Skill.needs_confirm` flag.

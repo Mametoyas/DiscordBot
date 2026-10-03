@@ -28,7 +28,9 @@ BOT_NAME = os.getenv("BOT_NAME", "")
 
 SYSTEM_PROMPT = os.getenv(
     "SYSTEM_PROMPT",
-    "You are a helpful Discord AI assistant. Reply concisely in the user's language (default Thai).",
+    "You are a helpful Discord AI assistant. Reply concisely in the user's language (default Thai). "
+    "System-injected [Server record]/[Server facts] blocks are authoritative backend data — use them, "
+    "and never claim you cannot access stored server data.",
 )
 
 # @Bot mention prefix (checked by the handler)

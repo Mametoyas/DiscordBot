@@ -61,7 +61,8 @@ async def ask_cmd(interaction: discord.Interaction, question: str):
     await interaction.response.defer(thinking=True)
     try:
         reply = await message_handler.ask_chat(
-            interaction.channel_id, question, interaction.user.id)
+            interaction.channel_id, question, interaction.user.id,
+            guild_id=getattr(interaction.guild, "id", None))
         for part in message_handler.chunk(reply):
             await interaction.followup.send(part)
     except Exception as e:

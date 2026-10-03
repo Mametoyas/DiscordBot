@@ -46,13 +46,28 @@ def push_history(channel_id: int, role: str, text: str, user_id: int | None = No
 
 
 async def ask_chat(channel_id: int, user_text: str, user_id: int | None = None,
-                 system: str | None = None) -> str:
-    """Chat Q&A with per-user-in-channel memory (DM / auto-channel / /ask)."""
+                 system: str | None = None, guild_id=None) -> str:
+    """Chat Q&A with per-user-in-channel memory (DM / auto-channel / /ask).
+
+    In guild channels, server-level knowledge (the user's remembered nicknames
+    + matching shared facts) is injected so chat answers agree with the agent.
+    """
     summary, recent = await chat_store.get_with_summary(channel_id, user_id)
     msgs = recent + [{"role": "user", "text": user_text}]
     sys = system or config.SYSTEM_PROMPT
     if summary:
         sys += f"\n\n[Earlier conversation summary — treat as established context]\n{summary}"
+    if guild_id is not None:
+        try:
+            known = await chat_store.aliases_for_member(guild_id, user_id)
+            if known:
+                sys += f"\n\n[Server record: this user is also known as: {', '.join(known)}]"
+            facts = await chat_store.recall_matching(guild_id, user_text, limit=5)
+            if facts:
+                sys += "\n\n[Server facts]\n" + "\n".join(
+                    f"- {f['key']}: {f['content']}" for f in facts)
+        except Exception:  # noqa: BLE001 — injection is best-effort
+            pass
     reply = await llm.get_client().generate(msgs, system=sys)
     guild_id = None
     await chat_store.add(channel_id, user_id, "user", user_text, guild_id)
@@ -60,8 +75,9 @@ async def ask_chat(channel_id: int, user_text: str, user_id: int | None = None,
     return reply
 
 
-def _mention_system(bot_name: str) -> str:
-    return (
+async def _mention_system(bot_name: str, message: discord.Message) -> str:
+    author = message.author
+    base = (
         f"You are {bot_name}, a friendly Discord bot talking directly to a user who mentioned you. "
         "Reply concisely in the user's language (default Thai). Be playful when they are playful — "
         "you may guess, joke, and chat freely like a friend.\n"
@@ -76,6 +92,22 @@ def _mention_system(bot_name: str) -> str:
         "members, kick/ban/timeout, emojis, invites, server info/setup, switch your own AI model (owner only). "
         "If they ask for a server action, say you'll do it once they phrase it as a command."
     )
+    # Inject who the author is so LLM never has to guess
+    identity = f"\n\nThe user you are talking to RIGHT NOW: username={author.name}, display_name={author.display_name}, id={author.id}."
+    if message.guild:
+        try:
+            aliases = await chat_store.aliases_for_member(message.guild.id, author.id)
+            if aliases:
+                identity += f" Also known as: {', '.join(aliases)}."
+            all_aliases = await chat_store.list_aliases(message.guild.id)
+            if all_aliases:
+                alias_lines = ", ".join(
+                    f"{r['alias']}=<@{r['user_id']}>" for r in all_aliases[:30]
+                )
+                identity += f"\nServer nickname map (alias=member): {alias_lines}."
+        except Exception:  # noqa: BLE001
+            pass
+    return base + identity
 
 
 async def _reply_chunks(message: discord.Message, text: str):
@@ -122,6 +154,7 @@ async def handle_message(message: discord.Message, client: discord.Client):
                             f"{message.author.display_name}: {content}",
                             message.author.id,
                             system=_mention_system(bot_name),
+                            guild_id=getattr(message.guild, "id", None),
                         )
                         await _reply_chunks(message, reply)
                     else:
@@ -140,6 +173,7 @@ async def handle_message(message: discord.Message, client: discord.Client):
             reply = await ask_chat(
                 message.channel.id, f"{message.author.display_name}: {content}",
                 message.author.id,
+                guild_id=getattr(message.guild, "id", None),
             )
             await _reply_chunks(message, f"{message.author.mention} {reply}")
         except Exception as e:  # noqa: BLE001 — user-visible fallback
