@@ -71,6 +71,7 @@ register(Skill(
     params={"channelName": "string - The name, mention, or ID of the channel to delete."},
     execute=_delete_channel,
     required_permissions=["manage_channels"],
+    needs_confirm=True,
 ))
 
 

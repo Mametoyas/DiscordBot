@@ -48,8 +48,12 @@ def push_history(channel_id: int, role: str, text: str, user_id: int | None = No
 async def ask_chat(channel_id: int, user_text: str, user_id: int | None = None,
                  system: str | None = None) -> str:
     """Chat Q&A with per-user-in-channel memory (DM / auto-channel / /ask)."""
-    msgs = await chat_store.get(channel_id, user_id) + [{"role": "user", "text": user_text}]
-    reply = await llm.get_client().generate(msgs, system=system or config.SYSTEM_PROMPT)
+    summary, recent = await chat_store.get_with_summary(channel_id, user_id)
+    msgs = recent + [{"role": "user", "text": user_text}]
+    sys = system or config.SYSTEM_PROMPT
+    if summary:
+        sys += f"\n\n[Earlier conversation summary — treat as established context]\n{summary}"
+    reply = await llm.get_client().generate(msgs, system=sys)
     guild_id = None
     await chat_store.add(channel_id, user_id, "user", user_text, guild_id)
     await chat_store.add(channel_id, user_id, "model", reply, guild_id)

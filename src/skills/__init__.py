@@ -18,6 +18,7 @@ class Skill:
     required_permissions: list[str] = field(default_factory=list)
     targets_member: bool = False
     fetch_raw: Callable[..., Awaitable[Any]] | None = None  # prefetch hook (no-LLM facts)
+    needs_confirm: bool = False  # destructive: executor asks ✅/❌ first
 
 
 SKILLS: dict[str, Skill] = {}
@@ -44,4 +45,4 @@ def required_of(skill: Skill) -> list[str]:
 
 
 # Import modules so their @register calls run. Order = catalog order.
-from . import channels, roles, members, moderation, emojis, invites, server  # noqa: E402,F401
+from . import channels, roles, members, moderation, emojis, invites, server, memory  # noqa: E402,F401

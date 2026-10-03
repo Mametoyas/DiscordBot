@@ -26,6 +26,7 @@ register(Skill(
     execute=_remove_member,
     required_permissions=["kick_members"],
     targets_member=True,
+    needs_confirm=True,
 ))
 
 
@@ -53,6 +54,7 @@ register(Skill(
     execute=_block_member,
     required_permissions=["ban_members"],
     targets_member=True,
+    needs_confirm=True,
 ))
 
 
@@ -154,4 +156,5 @@ register(Skill(
     },
     execute=_clear_messages,
     required_permissions=["manage_messages"],
+    needs_confirm=True,
 ))

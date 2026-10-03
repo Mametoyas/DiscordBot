@@ -3,6 +3,7 @@
 import discord
 
 from src.skills import SKILLS, required_of
+from src.utils.confirm import describe_action, request_confirm
 from src.utils.error_mapper import map_discord_error as map_error
 from src.utils.fuzzy_match import find_member
 
@@ -66,6 +67,20 @@ async def execute(actions: list[dict], message) -> list[dict]:
                 if err:
                     results.append({"skill": name, "status": "failed", "error": err})
                     continue
+
+        if skill.needs_confirm:
+            try:
+                ok = await request_confirm(
+                    message.channel, message.author.id,
+                    describe_action(name, params), timeout=60.0)
+            except Exception as e:  # noqa: BLE001 — no prompt possible, stay safe
+                results.append({"skill": name, "status": "failed",
+                                "error": f"Confirmation prompt failed, action cancelled: {e}"})
+                continue
+            if not ok:
+                results.append({"skill": name, "status": "failed",
+                                "error": "Cancelled — the action was not confirmed."})
+                continue
 
         try:
             out = await skill.execute(guild, params, message)

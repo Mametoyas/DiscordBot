@@ -61,6 +61,23 @@ create table if not exists member_aliases (
 
 _alias_local: dict[tuple, str] = {}
 
+MEMORIES_SETUP = """
+create table if not exists memories (
+  id bigint generated always as identity primary key,
+  guild_id text not null,
+  category text not null default 'general',
+  key text not null,
+  content text not null,
+  created_by text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  unique (guild_id, category, key)
+);
+create index if not exists memories_guild_lookup on memories (guild_id, updated_at desc);
+"""
+
+_memory_local: dict[tuple, dict] = {}
+
 
 def _cfg(key: str, default: str = "") -> str:
     import os
@@ -98,23 +115,57 @@ class ChatStore:
     def _local_add(self, channel_id, user_id, role: str, text: str):
         _local[(str(channel_id), str(user_id))].append({"role": role, "text": text[:2000]})
 
-    async def get(self, channel_id, user_id) -> list[dict]:
-        """Newest-last list of {role, text}, capped at keep_pairs*2. Never raises."""
+    async def _fetch_all(self, channel_id, user_id, limit: int) -> list[dict]:
+        """Newest-last messages, up to limit. Never raises."""
         if not self.enabled:
-            return self._local_get(channel_id, user_id)
+            return self._local_get(channel_id, user_id)[-limit:]
         try:
             c = self._client_or_new()
             r = await c.get(
                 f"{self.url}/rest/v1/{TABLE}"
                 f"?channel_id=eq.{channel_id}&user_id=eq.{user_id}"
-                f"&select=role,text&order=id.desc&limit={self.keep_pairs * 2}",
+                f"&select=role,text&order=id.desc&limit={limit}",
                 headers=self._headers(),
             )
             r.raise_for_status()
             return [{"role": row["role"], "text": row["text"]} for row in reversed(r.json())]
         except Exception as e:  # noqa: BLE001 — fallback must never break chat
             log.warning("[ChatStore] get failed, using local memory: %s", e)
-            return self._local_get(channel_id, user_id)
+            return self._local_get(channel_id, user_id)[-limit:]
+
+    async def get(self, channel_id, user_id) -> list[dict]:
+        """Newest-last list of {role, text}, capped at keep_pairs*2. Never raises."""
+        return await self._fetch_all(channel_id, user_id, self.keep_pairs * 2)
+
+    async def get_with_summary(self, channel_id, user_id) -> tuple:
+        """(summary|None, recent messages). Overflow older than the keep window
+        is compressed into one summary (discord-agent style). Never raises."""
+        import os as _os
+
+        compress_at = int(_os.getenv("CHAT_COMPRESS_AT", "60") or 60)
+        msgs = await self._fetch_all(channel_id, user_id, compress_at)
+        window = self.keep_pairs * 2
+        if len(msgs) <= window:
+            return None, msgs
+        summary = await self._summarize(msgs[:-window])
+        return summary, msgs[-window:]
+
+    async def _summarize(self, messages: list[dict]) -> str | None:
+        if not messages:
+            return None
+        try:
+            from src.core import llm as _llm
+
+            text = "\n".join(f"{m['role']}: {m['text'][:300]}" for m in messages)
+            out = await _llm.generate_text(
+                "Summarize this chat concisely: keep facts, preferences, decisions. "
+                "Same language as the chat. Under 800 characters.\n" + text,
+                temperature=0.0,
+            )
+            return (out or "").strip()[:1000] or None
+        except Exception as e:  # noqa: BLE001
+            log.warning("[ChatStore] summarize failed: %s", e)
+            return None
 
     async def add(self, channel_id, user_id, role: str, text: str, guild_id=None):
         """Append one message locally AND remotely. Never raises."""
@@ -242,6 +293,86 @@ class ChatStore:
         """Nicknames remembered for ONE member. Never raises."""
         all_rows = await self.list_aliases(guild_id)
         return [r["alias"] for r in all_rows if str(r.get("user_id")) == str(user_id)]
+
+    # ---- shared guild memories (remember/recall/forget, discord-agent style) ----
+
+    @staticmethod
+    def _tokens(query: str, limit: int = 6) -> list[str]:
+        import re
+
+        words = re.findall(r"[^\s,.!?;:()\"']+", str(query or ""))
+        return [w for w in words if len(w) >= 2][:limit]
+
+    async def remember_fact(self, guild_id, key: str, content: str,
+                            category: str = "general", created_by=None):
+        """Store/update one shared fact (upsert). Never raises (except empty key)."""
+        key = (key or "").strip()
+        if not key:
+            raise ValueError("ต้องมีหัวข้อ (key) ที่จะจำ")
+        category = (category or "general").strip() or "general"
+        k = (str(guild_id), category.lower(), key.lower())
+        _memory_local[k] = {"key": key, "content": content, "category": category}
+        if not self.enabled:
+            return
+        try:
+            from datetime import datetime as _dt, timezone as _tz
+
+            c = self._client_or_new()
+            r = await c.post(
+                f"{self.url}/rest/v1/memories?on_conflict=guild_id,category,key",
+                headers={**self._headers(), "Prefer": "resolution=merge-duplicates,return=minimal"},
+                json=[{"guild_id": str(guild_id), "category": category, "key": key,
+                       "content": content, "created_by": str(created_by) if created_by else None,
+                       "updated_at": _dt.now(_tz.utc).isoformat()}],
+            )
+            r.raise_for_status()
+        except Exception as e:  # noqa: BLE001
+            log.warning("[ChatStore] remember_fact failed (local copy kept): %s", e)
+
+    async def recall_matching(self, guild_id, query: str, limit: int = 5) -> list[dict]:
+        """Facts whose key/content matches query words (ILIKE OR). Never raises."""
+        toks = self._tokens(query)
+        if not self.enabled:
+            out = [v for (g, _c, _k), v in _memory_local.items() if g == str(guild_id)]
+            if not toks:
+                return out[-limit:]
+            scored = [v for v in out
+                      if any(t.lower() in (v["key"] + " " + v["content"]).lower() for t in toks)]
+            return (scored or out)[-limit:]
+        try:
+            c = self._client_or_new()
+            ors = ",".join(
+                f"key.ilike.*{t}*,content.ilike.*{t}*" for t in toks) if toks else None
+            params = {"guild_id": f"eq.{guild_id}", "select": "category,key,content",
+                      "order": "updated_at.desc", "limit": limit}
+            if ors:
+                params["or"] = f"({ors})"
+            r = await c.get(f"{self.url}/rest/v1/memories",
+                            headers=self._headers(), params=params)
+            r.raise_for_status()
+            return r.json()
+        except Exception as e:  # noqa: BLE001
+            log.warning("[ChatStore] recall_matching failed: %s", e)
+            return []
+
+    async def forget_fact(self, guild_id, key: str, category: str = "general") -> bool:
+        """Delete one shared fact. Returns True if something was removed."""
+        category = (category or "general").strip() or "general"
+        k = (str(guild_id), category.lower(), (key or "").strip().lower())
+        had_local = _memory_local.pop(k, None) is not None
+        if not self.enabled:
+            return had_local
+        try:
+            c = self._client_or_new()
+            r = await c.delete(
+                f"{self.url}/rest/v1/memories", headers=self._headers(),
+                params={"guild_id": f"eq.{guild_id}", "category": f"eq.{category}",
+                        "key": f"eq.{key.strip()}"})
+            r.raise_for_status()
+            return True
+        except Exception as e:  # noqa: BLE001
+            log.warning("[ChatStore] forget_fact failed: %s", e)
+            return had_local
 
 
 store = ChatStore()

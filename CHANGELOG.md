@@ -1,5 +1,10 @@
 # CHANGELOG.md
 
+## 2026-10-03 — discord-agent ports: shared memory + confirm + compression (44 skills)
+- Shared memory: Supabase `memories` (SQL in `chat_store.MEMORIES_SETUP`) + `rememberFact`/`recallFacts`/`forgetFact` skills (`src/skills/memory.py`); planner SCOPE routes จำไว้ว่า/ลืมเรื่อง; prefetch injects matching facts.
+- Confirmation gate (`src/utils/confirm.py`, from discord-agent's tools_permissions): kick/ban/clearMessages/deleteChannel ask ✅/❌ (requester-only, 60s timeout = cancel). `Skill.needs_confirm` flag.
+- Compression (from context_manager): history beyond `CHAT_COMPRESS_AT` (60) rows is LLM-summarized and prepended to the system prompt.
+
 ## 2026-10-03 — teach-who-is-who via planner
 - Planner SCOPE: natural teaching ("@Y ชื่อ X", "คนนี้ชื่อ X", "ฉันชื่อ X"→author, split A/B/C) → `setMemberAlias`; who-questions ("@Y คือใคร", "ผมชื่ออะไร"→author) → `getUserInfo`.
 - `getUserInfo` now shows remembered nicknames ("Also known as"), so anyone asking gets the gang names.
