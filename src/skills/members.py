@@ -20,12 +20,20 @@ async def _get_user_info(guild, params, message):
         f"Roles: {roles}",
         f"Timed out: {'yes until ' + str(member.timed_out_until) if member.is_timed_out() else 'no'}",
     ]
+    try:
+        from src.utils.chat_store import store as _chat_store
+
+        nicknames = await _chat_store.aliases_for_member(guild.id, member.id)
+    except Exception:  # noqa: BLE001 — alias lookup must never break info
+        nicknames = []
+    if nicknames:
+        lines.append("Also known as: " + ", ".join(nicknames))
     return "\n".join(lines)
 
 
 register(Skill(
     name="getUserInfo",
-    description="Shows profile info about a member (join dates, roles, timeout state).",
+    description="Shows profile info about a member (join dates, roles, timeout state, remembered nicknames).",
     params={"memberId": "string - The ID, mention, or username of the member."},
     execute=_get_user_info,
 ))

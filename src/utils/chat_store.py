@@ -238,4 +238,10 @@ class ChatStore:
                     for (g, a), u in sorted(_alias_local.items()) if g == str(guild_id)]
 
 
+    async def aliases_for_member(self, guild_id, user_id) -> list[str]:
+        """Nicknames remembered for ONE member. Never raises."""
+        all_rows = await self.list_aliases(guild_id)
+        return [r["alias"] for r in all_rows if str(r.get("user_id")) == str(user_id)]
+
+
 store = ChatStore()

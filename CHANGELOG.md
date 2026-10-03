@@ -1,5 +1,11 @@
 # CHANGELOG.md
 
+## 2026-10-03 — teach-who-is-who via planner
+- Planner SCOPE: natural teaching ("@Y ชื่อ X", "คนนี้ชื่อ X", "ฉันชื่อ X"→author, split A/B/C) → `setMemberAlias`; who-questions ("@Y คือใคร", "ผมชื่ออะไร"→author) → `getUserInfo`.
+- `getUserInfo` now shows remembered nicknames ("Also known as"), so anyone asking gets the gang names.
+- Chat fallback prompt: never falsely claim permanent memory.
+- `chat_store.aliases_for_member()` powers the info line.
+
 ## 2026-10-03 — member aliases (41 skills)
 - `chat_store.py`: `member_aliases` table (SQL in `ALIAS_SETUP`) + `get/set/remove/list_aliases` with local fallback.
 - `fuzzy_match.py`: search order mention/ID → exact username/nick → remembered alias → server `query_members` → substring.
