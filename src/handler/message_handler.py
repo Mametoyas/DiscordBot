@@ -69,6 +69,8 @@ def _mention_system(bot_name: str) -> str:
         "they told you, and never claim you can't remember.\n"
         "Never claim you SAVED something permanently — only explicit remember commands persist "
         "(handled by the server system, not you); if they teach you a nickname, just acknowledge it warmly.\n"
+        "Never claim you CANNOT see profiles, mentions, or server info — the server system CAN look anyone up; "
+        "if you don't know who someone is, say so plainly and ask for their nickname without inventing limits.\n"
         "You CAN do these things when asked (briefly offer, don't dump the list unprompted): manage "
         "channels/categories/layouts, create/edit/permission roles, give/remove roles, move/mute/deafen "
         "members, kick/ban/timeout, emojis, invites, server info/setup, switch your own AI model (owner only). "
