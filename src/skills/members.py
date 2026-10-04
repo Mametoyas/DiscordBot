@@ -7,7 +7,8 @@ from src.utils.fuzzy_match import find_channel, find_member
 
 
 async def _get_user_info(guild, params, message):
-    member = await find_member(guild, params.get("memberId", ""))
+    member_id = params.get("memberId") or str(message.author.id)  # default: the asker
+    member = await find_member(guild, member_id)
     if not member:
         raise ValueError(f"I couldn't find anyone matching \"{params.get('memberId')}\" here.")
     roles = ", ".join(r.name for r in member.roles if not r.is_default()) or "-"
@@ -34,7 +35,9 @@ async def _get_user_info(guild, params, message):
 register(Skill(
     name="getUserInfo",
     description="Shows profile info about a member (join dates, roles, timeout state, remembered nicknames).",
-    params={"memberId": "string - The ID, mention, or username of the member."},
+    params={
+        "memberId": "string (optional) - The ID, mention, or username of the member (default: yourself).",
+    },
     execute=_get_user_info,
 ))
 

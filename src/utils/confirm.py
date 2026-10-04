@@ -91,6 +91,7 @@ def describe_action(name: str, params: dict) -> str:
         "archiveThread": lambda p: f"{'เก็บ' if p.get('archived', True) else 'เปิด'}เธรด **{p.get('threadName', '?')}**",
         "createInvite": lambda p: "สร้างลิงก์เชิญ",
         "sendMessage": lambda p: f"ส่งข้อความไป #{p.get('channelName', '?')}",
+        "getUserInfo": lambda p: f"ดูข้อมูล {p.get('memberId') or 'ของคุณ'}",
         "removeMember": lambda p: f"เตะ **{p.get('memberId', '?')}** ออกจาก server",
         "blockMember": lambda p: f"แบน **{p.get('memberId', '?')}**",
         "clearMessages": lambda p: f"ลบข้อความ (limit {p.get('limit', '?')})",

@@ -33,6 +33,12 @@ async def execute(actions: list[dict], message, pre_confirmed: bool = False) -> 
             results.append({"skill": name, "status": "failed", "error": "Unknown skill"})
             continue
 
+        if not params.get("memberId") and "memberId" in (skill.params or {}):
+            others = [u for u in getattr(message, "mentions", [])
+                      if not u.bot and u.id != guild.me.id]
+            if len(others) == 1:
+                params = {**params, "memberId": str(others[0].id)}
+
         missing = [k for k in required_of(skill) if params.get(k) in (None, "")]
         if missing:
             results.append({

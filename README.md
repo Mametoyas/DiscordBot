@@ -2,7 +2,7 @@
 
 Discord AI bot using hosted **Gemini API** — no local LLM, no own server. Runs as a worker on **Render**.
 
-- `@Bot <คำสั่งจัดการ server>` → **agent** (plan → execute → summarize, 48 skills)
+- `@Bot <คำสั่งจัดการ server>` → **agent** (plan → execute → summarize, 49 skills)
 - `@Bot จัดเซิร์ฟเวอร์ให้หน่อย` → สร้าง layout มาตรฐาน (general/rules/welcome/ห้องเสียง + ข้อความต้อนรับ) ไม่ลบของเดิม
 - `@Bot จัดหมวดหมู่ + ย้ายห้องตามผังนี้ ...` → สร้าง categories + สร้าง/ย้ายห้องทีเดียวจบ (แปะผังมาได้เลย)
 - `@Bot` ลอยๆ → greeting (no LLM call)
@@ -35,7 +35,7 @@ Also enable **MESSAGE CONTENT INTENT** + **SERVER MEMBERS INTENT** in the Discor
 - `bot.py` — thin entry: client + `/ask` + events (keeps `Procfile`/`render.yaml` as `python bot.py`)
 - `src/config.py` — env loading
 - `src/core/llm.py` — `GeminiRotator` + `generate_text()`
-- `src/skills/` — 48 skills in 9 modules + registry
+- `src/skills/` — 49 skills in 9 modules + registry
 - `lavalink/` — Dockerfile + application.yml (Lavalink v4 + youtube-plugin 1.18.2)
 - `src/agent/` — `run()` = prefetch → planner → executor → summarizer + `language.py` + `composer.py`
 - `src/handler/message_handler.py` — mention/cooldown/greeting + agent/chat routing (+`paginator.py` ปุ่ม ◀ 1/3 ▶)

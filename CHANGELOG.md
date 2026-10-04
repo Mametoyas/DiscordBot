@@ -1,5 +1,9 @@
 # CHANGELOG.md
 
+## 2026-10-03 — truthful DB check + mention repair (49 skills)
+- `checkDatabase` skill ใหม่: probe ตารางจริง 3 ตาราง ตอบตามจริง (ห้ามโม้ว่าปกติ).
+- `getUserInfo`: memberId optional → default ถามข้อมูลตัวเอง; executor เติม mention ที่ planner ทำหล่นให้เอง; confirm โชว์ชื่อคนแบบอ่านรู้เรื่อง.
+
 ## 2026-10-03 — never fake permission limits
 - Both chat prompts: never claim the bot lacks Discord permissions/API — redirect to `@Bot <command>`.
 

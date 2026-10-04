@@ -70,3 +70,42 @@ register(Skill(
     execute=_forget,
     required_permissions=["manage_messages"],
 ))
+
+
+async def _check_db(guild, params, message):
+    """Truthful database health check — never claim ok without probing."""
+    if not store.enabled:
+        return ("❌ ยังไม่ได้ตั้งค่า SUPABASE_URL/SUPABASE_KEY — "
+                "ตอนนี้จำได้แค่ในเครื่อง (restart หาย)")
+    import httpx
+
+    tables = ["chat_history", "member_aliases", "memories"]
+    lines = []
+    ok_all = True
+    async with httpx.AsyncClient(timeout=10.0) as c:
+        for t in tables:
+            try:
+                r = await c.get(f"{store.url}/rest/v1/{t}",
+                                headers=store._headers(),
+                                params={"select": "id", "limit": 1})
+                if r.status_code == 200:
+                    lines.append(f"✅ {t}")
+                elif r.status_code == 404:
+                    ok_all = False
+                    lines.append(f"❌ {t} — ยังไม่สร้างตาราง (รัน SQL ใน chat_store.py)")
+                else:
+                    ok_all = False
+                    lines.append(f"⚠️ {t} — HTTP {r.status_code}")
+            except Exception as e:  # noqa: BLE001
+                ok_all = False
+                lines.append(f"⚠️ {t} — ต่อไม่ได้: {e}")
+    head = "🟢 ฐานข้อมูลปกติ" if ok_all else "🔴 ฐานข้อมูลมีปัญหา"
+    return head + "\n" + "\n".join(lines)
+
+
+register(Skill(
+    name="checkDatabase",
+    description="Checks whether the Supabase tables (chat_history, member_aliases, memories) actually exist and respond.",
+    params={"format": "string (optional) - reserved, currently ignored."},
+    execute=_check_db,
+))
