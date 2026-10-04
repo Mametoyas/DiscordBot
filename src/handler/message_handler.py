@@ -55,6 +55,15 @@ async def ask_chat(channel_id: int, user_text: str, user_id: int | None = None,
     summary, recent = await chat_store.get_with_summary(channel_id, user_id)
     msgs = recent + [{"role": "user", "text": user_text}]
     sys = system or config.SYSTEM_PROMPT
+    try:  # ground the model about its own backbone (stops GPT-4o/Claude hallucinations)
+        from src.web.server import MODEL_CHOICES as _CHOICES
+
+        _model = llm.get_client().status()["model"]
+        sys += (f"\n\n[Bot internals — authoritative] You run on `{_model}` via the Gemini API. "
+                f"Switchable models: {', '.join(_CHOICES)} (via /models, owner/LLMeditor only). "
+                "Never name other model families (GPT, Claude, etc.) as yourself.")
+    except Exception:  # noqa: BLE001 — grounding is best-effort
+        pass
     if summary:
         sys += f"\n\n[Earlier conversation summary — treat as established context]\n{summary}"
     if guild_id is not None:
@@ -153,7 +162,7 @@ async def handle_message(message: discord.Message, client: discord.Client):
                             message.channel.id,
                             f"{message.author.display_name}: {content}",
                             message.author.id,
-                            system=_mention_system(bot_name),
+                            system=await _mention_system(bot_name, message),
                             guild_id=getattr(message.guild, "id", None),
                         )
                         await _reply_chunks(message, reply)

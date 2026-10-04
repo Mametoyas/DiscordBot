@@ -75,23 +75,34 @@ async def help_cmd(interaction: discord.Interaction):
         "**💬 คุย/ถาม** — `/ask คำถาม` · DM · หรือพิมพ์ในช่อง auto-reply\n"
         "**🤖 สั่งจัดการ server** — `@Bot ...` เช่น `@Bot สร้างยศ VIP สีแดงให้ @ploy`, `@Bot timeout @เกรียน 10 นาที`, `@Bot list channels`\n"
         "**📄 ลิสต์ยาวๆ** — มีปุ่ม ◀ ▶ เปลี่ยนหน้า (กดได้เฉพาะคนสั่ง)\n"
-        "**🧠 เจ้าของ server** — `/models list` · `/models set` · `/model` · `/addkey` · `/llmstatus`",
+        "**🧠 เจ้าของ server / ยศ LLMeditor** — `/models list` · `/models set` · `/model` · `/addkey` · `/llmstatus`",
         ephemeral=True,
     )
 
 
-def _is_owner(interaction: discord.Interaction) -> bool:
-    return interaction.guild is not None and interaction.user.id == interaction.guild.owner_id
+def _can_manage_llm(interaction: discord.Interaction) -> bool:
+    """Server owner or holder of the LLMeditor role."""
+    if interaction.guild is None:
+        return False
+    if interaction.user.id == interaction.guild.owner_id:
+        return True
+    member = interaction.guild.get_member(interaction.user.id)
+    if not member:
+        return False
+    return any(r.name.lower() == "llmeditor" for r in member.roles)
+
+
+_LLM_DENY = "❌ เฉพาะเจ้าของ server หรือยศ LLMeditor"
 
 
 models_group = app_commands.Group(
-    name="models", description="ดู/เปลี่ยนโมเดล backbone ของ agent (เจ้าของ server เท่านั้น)")
+    name="models", description="ดู/เปลี่ยนโมเดล backbone ของ agent (เจ้าของ server / ยศ LLMeditor)")
 
 
 @models_group.command(name="list", description="ดูว่ามีโมเดลไหนให้ใช้บ้าง + ตัวที่ใช้อยู่")
 async def models_list_cmd(interaction: discord.Interaction):
-    if not _is_owner(interaction):
-        await interaction.response.send_message("❌ เฉพาะเจ้าของ server", ephemeral=True)
+    if not _can_manage_llm(interaction):
+        await interaction.response.send_message(_LLM_DENY, ephemeral=True)
         return
     current = llm.get_client().status()["model"]
     lines = [(f"✅ `{m}` ← ใช้อยู่" if m == current else f"▫️ `{m}`") for m in MODEL_CHOICES]
@@ -105,8 +116,8 @@ async def models_list_cmd(interaction: discord.Interaction):
 @models_group.command(name="set", description="เปลี่ยนโมเดล backbone ของ agent ทันที")
 @app_commands.describe(name="ชื่อโมเดล — ดูตัวเลือกด้วย /models list")
 async def models_set_cmd(interaction: discord.Interaction, name: str):
-    if not _is_owner(interaction):
-        await interaction.response.send_message("❌ เฉพาะเจ้าของ server", ephemeral=True)
+    if not _can_manage_llm(interaction):
+        await interaction.response.send_message(_LLM_DENY, ephemeral=True)
         return
     llm.get_client().set_model(name)
     await interaction.response.send_message(
@@ -118,11 +129,11 @@ async def models_set_cmd(interaction: discord.Interaction, name: str):
 tree.add_command(models_group)
 
 
-@tree.command(name="model", description="ดู/เปลี่ยนโมเดล Gemini (เจ้าของ server เท่านั้น)")
+@tree.command(name="model", description="ดู/เปลี่ยนโมเดล Gemini (เจ้าของ server / ยศ LLMeditor)")
 @app_commands.describe(name="ชื่อโมเดลใหม่ เช่น gemini-2.5-flash (เว้นว่าง = ดูค่าปัจจุบัน)")
 async def model_cmd(interaction: discord.Interaction, name: str | None = None):
-    if not _is_owner(interaction):
-        await interaction.response.send_message("❌ เฉพาะเจ้าของ server", ephemeral=True)
+    if not _can_manage_llm(interaction):
+        await interaction.response.send_message(_LLM_DENY, ephemeral=True)
         return
     if not name:
         s = llm.get_client().status()
@@ -135,11 +146,11 @@ async def model_cmd(interaction: discord.Interaction, name: str | None = None):
     await interaction.response.send_message(f"✅ เปลี่ยน backbone เป็น `{name.strip()}` แล้ว (มีผลทันที)", ephemeral=True)
 
 
-@tree.command(name="addkey", description="เพิ่ม Gemini API key ตอนรัน (เจ้าของ server เท่านั้น)")
+@tree.command(name="addkey", description="เพิ่ม Gemini API key ตอนรัน (เจ้าของ server / ยศ LLMeditor)")
 @app_commands.describe(key="API key ใหม่ (คั่น comma ได้หลายดอก)")
 async def addkey_cmd(interaction: discord.Interaction, key: str):
-    if not _is_owner(interaction):
-        await interaction.response.send_message("❌ เฉพาะเจ้าของ server", ephemeral=True)
+    if not _can_manage_llm(interaction):
+        await interaction.response.send_message(_LLM_DENY, ephemeral=True)
         return
     added = llm.get_client().add_keys(key.split(","))
     s = llm.get_client().status()
@@ -149,10 +160,10 @@ async def addkey_cmd(interaction: discord.Interaction, key: str):
     )
 
 
-@tree.command(name="llmstatus", description="ดูสถานะ LLM (เจ้าของ server เท่านั้น)")
+@tree.command(name="llmstatus", description="ดูสถานะ LLM (เจ้าของ server / ยศ LLMeditor)")
 async def llmstatus_cmd(interaction: discord.Interaction):
-    if not _is_owner(interaction):
-        await interaction.response.send_message("❌ เฉพาะเจ้าของ server", ephemeral=True)
+    if not _can_manage_llm(interaction):
+        await interaction.response.send_message(_LLM_DENY, ephemeral=True)
         return
     s = llm.get_client().status()
     await interaction.response.send_message(

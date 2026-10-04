@@ -1,5 +1,9 @@
 # CHANGELOG.md
 
+## 2026-10-03 — LLMeditor role + model grounding
+- `bot.py`: `/models` `/model` `/addkey` `/llmstatus` now allow server owner OR `LLMeditor` role (`_can_manage_llm`).
+- `message_handler.py`: every chat reply is grounded with the real backbone model + switchable list — stops GPT-4o/Claude hallucinations.
+
 ## 2026-10-03 — chat path sees server knowledge
 - `ask_chat(guild_id=)`: injects the author's remembered nicknames + matching shared facts into the system prompt (chat answers now agree with agent answers for everyone, not just the teacher).
 - Default `SYSTEM_PROMPT`: injected server blocks are authoritative; never claim no backend access. `/ask` passes guild id too.
