@@ -1,5 +1,9 @@
 # CHANGELOG.md
 
+## 2026-10-03 — autonomous plans + plan-level confirm
+- Planner `AUTONOMOUS DEFAULTS`: เติม optional เอง (ยศเกม: สี/hoist/mentionable/สิทธิ์ voice) ไม่ถามซ้ำ — ผู้ใช้ตรวจผ่านปุ่มก่อนรันเสมอ.
+- `agent.run(confirm_fn=)`: มี action → โชว์แผนเป็นข้อๆ + ปุ่ม ✅/❌ ก่อน execute; ปฏิเสธ/หมดเวลา = ยกเลิก. `executor(pre_confirmed=)` ข้าม confirm ซ้ำของ skill อันตราย.
+
 ## 2026-10-03 — thread skills (48 skills)
 - `src/skills/threads.py` (new): `createThread`/`listThreads`/`archiveThread`/`deleteThread` (confirm-gated). Threads removed from planner out-of-scope list.
 

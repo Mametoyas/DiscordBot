@@ -64,12 +64,43 @@ async def request_confirm(channel, requester_id: int, description: str,
     return view.confirmed is True
 
 
+def _short(v) -> str:
+    s = str(v)
+    return s if len(s) <= 40 else s[:37] + "..."
+
+
 def describe_action(name: str, params: dict) -> str:
+    params = params or {}
     target = params.get("memberId") or params.get("channelName") or "?"
-    return {
-        "removeMember": f"เตะ **{target}** ออกจาก server",
-        "blockMember": f"แบน **{target}**",
-        "clearMessages": f"ลบข้อความ (limit {params.get('limit', '?')})",
-        "deleteChannel": f"ลบห้อง **{target}**",
-        "deleteThread": f"ลบเธรด **{target}**",
-    }.get(name, f"รัน `{name}`")
+    pretty = {
+        "createRole": lambda p: f"สร้างยศ **{p.get('name', '?')}**"
+            + (f" สี {p['color']}" if p.get("color") else "")
+            + (f" สิทธิ์: {p['permissions']}" if p.get("permissions") else ""),
+        "addRoleToMember": lambda p: f"ให้ยศ **{p.get('roleName', '?')}** กับ {p.get('memberId', '?')}",
+        "removeRoleFromMember": lambda p: f"ถอดยศ **{p.get('roleName', '?')}** จาก {p.get('memberId', '?')}",
+        "setRolePermissions": lambda p: f"ตั้งสิทธิ์ยศ **{p.get('roleName', '?')}**: {p.get('permissions', '?')}",
+        "createChannel": lambda p: f"สร้างห้อง **{p.get('name', '?')}**",
+        "createCategory": lambda p: f"สร้างหมวด **{p.get('name', '?')}**",
+        "moveAllMembers": lambda p: f"ย้ายทุกคนจาก **{p.get('fromChannel', '?')}** → **{p.get('toChannel', '?')}**",
+        "moveMember": lambda p: f"ย้าย {p.get('memberId', '?')} → {p.get('channelId') or 'ตัดสาย'}",
+        "timeoutMember": lambda p: f"timeout {p.get('memberId', '?')} {p.get('durationMinutes', '?')} นาที",
+        "setNickname": lambda p: f"ตั้งฉายา {p.get('memberId', '?')} = {p.get('nickname', '?')}",
+        "rememberFact": lambda p: f"จำไว้ว่า **{p.get('key', '?')}**",
+        "setMemberAlias": lambda p: f"จำชื่อ **{p.get('alias', '?')}** = {p.get('memberId', '?')}",
+        "createThread": lambda p: f"สร้างเธรด **{p.get('name', '?')}**",
+        "archiveThread": lambda p: f"{'เก็บ' if p.get('archived', True) else 'เปิด'}เธรด **{p.get('threadName', '?')}**",
+        "createInvite": lambda p: "สร้างลิงก์เชิญ",
+        "sendMessage": lambda p: f"ส่งข้อความไป #{p.get('channelName', '?')}",
+        "removeMember": lambda p: f"เตะ **{p.get('memberId', '?')}** ออกจาก server",
+        "blockMember": lambda p: f"แบน **{p.get('memberId', '?')}**",
+        "clearMessages": lambda p: f"ลบข้อความ (limit {p.get('limit', '?')})",
+        "deleteChannel": lambda p: f"ลบห้อง **{p.get('channelName', '?')}**",
+        "deleteThread": lambda p: f"ลบเธรด **{p.get('threadName', '?')}**",
+    }
+    if name in pretty:
+        try:
+            return pretty[name](params)
+        except Exception:  # noqa: BLE001
+            pass
+    rest = ", ".join(f"{k}={_short(v)}" for k, v in params.items() if v not in (None, ""))
+    return f"รัน `{name}`" + (f" ({rest})" if rest else "")

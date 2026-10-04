@@ -22,7 +22,7 @@ def _hierarchy_ok(guild: discord.Guild, requester: discord.Member, target: disco
     return None
 
 
-async def execute(actions: list[dict], message) -> list[dict]:
+async def execute(actions: list[dict], message, pre_confirmed: bool = False) -> list[dict]:
     guild = message.guild
     results: list[dict] = []
     for action in actions:
@@ -68,7 +68,7 @@ async def execute(actions: list[dict], message) -> list[dict]:
                     results.append({"skill": name, "status": "failed", "error": err})
                     continue
 
-        if skill.needs_confirm:
+        if skill.needs_confirm and not pre_confirmed:
             try:
                 ok = await request_confirm(
                     message.channel, message.author.id,

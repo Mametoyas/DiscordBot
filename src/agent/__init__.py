@@ -16,7 +16,9 @@ from .prefetch import prefetch_query_data
 log = logging.getLogger("gemini-bot")
 
 
-async def run(user_text: str, message) -> dict:
+async def run(user_text: str, message, confirm_fn=None) -> dict:
+    """confirm_fn(actions) -> bool: asked BEFORE anything executes.
+    None (or no actions) means chat-fallback territory as before."""
     prefetched = await prefetch_query_data(user_text, message)
 
     log.info("[Agent] Planning: %s", user_text[:100])
@@ -29,7 +31,18 @@ async def run(user_text: str, message) -> dict:
         # signals this; skipping summarize saves one LLM call.
         return {"reply": None, "plan": decision, "results": []}
 
-    results = await executor.execute(decision["actions"], message)
+    pre_confirmed = False
+    if confirm_fn is not None:
+        try:
+            pre_confirmed = bool(await confirm_fn(decision["actions"]))
+        except Exception:  # noqa: BLE001 — broken prompt = stay safe
+            log.exception("[Agent] confirm_fn failed")
+            pre_confirmed = False
+        if not pre_confirmed:
+            return {"reply": "❌ ยกเลิกแล้ว ไม่ได้ทำอะไร",
+                    "plan": decision, "results": [], "cancelled": True}
+
+    results = await executor.execute(decision["actions"], message, pre_confirmed=pre_confirmed)
 
     log.info("[Agent] Summarizing (%d result(s))...", len(results))
     summary = await summarizer.summarize(user_text, message, prefetched, decision, results)
