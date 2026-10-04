@@ -1,5 +1,7 @@
 # CHANGELOG.md
 
+## 2026-10-03 — drop retired 2.x models (7 left)
+
 ## 2026-10-03 — quota-based model list (9 models)
 - `MODEL_CHOICES` = 9 text-out models ตามตาราง quota จริง, เรียงตามโควตา; default `gemini-3.5-flash-lite` (15 RPM/500 RPD). `/models list` โชว์ quota แต่ละตัว.
 

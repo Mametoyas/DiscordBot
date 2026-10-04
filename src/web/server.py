@@ -27,9 +27,7 @@ CLIENT = None  # discord.Client, set by start()
 MODEL_CHOICES = [
     "gemini-3.5-flash-lite",
     "gemini-3.1-flash-lite",
-    "gemini-2.5-flash-lite",
     "gemini-3.8-flash",
-    "gemini-2.5-flash",
     "gemini-3-flash",
     "gemini-3.5-flash",
     "gemini-3.6-flash",
@@ -37,12 +35,11 @@ MODEL_CHOICES = [
 ]
 
 # Quota hints from the project's rate-limits page (RPM · RPD), shown in /models list.
+# (2.x family removed — Google retired it for new users, points to 3.5-flash-lite.)
 MODEL_QUOTAS = {
     "gemini-3.5-flash-lite": "15 RPM · 500 RPD ⭐ highest",
     "gemini-3.1-flash-lite": "15 RPM · 500 RPD",
-    "gemini-2.5-flash-lite": "10 RPM · 250K TPM · 20 RPD",
     "gemini-3.8-flash": "5 RPM · 20 RPD",
-    "gemini-2.5-flash": "5 RPM · 20 RPD",
     "gemini-3-flash": "5 RPM · 20 RPD",
     "gemini-3.5-flash": "5 RPM · 20 RPD",
     "gemini-3.6-flash": "5 RPM · 20 RPD",
