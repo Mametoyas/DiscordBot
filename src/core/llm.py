@@ -19,7 +19,8 @@ GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 GROQ_API_BASE = "https://api.groq.com/openai/v1/chat/completions"
 
 # Models served by Groq (OpenAI-compatible API) instead of Gemini.
-GROQ_MODELS = {"openai/gpt-oss-120b", "openai/gpt-oss-20b", "llama-3.3-70b-versatile"}
+GROQ_MODELS = {"openai/gpt-oss-120b", "openai/gpt-oss-20b",
+               "allam-2-7b", "qwen/qwen3.8-27b"}
 
 _groq_key: str = ""
 

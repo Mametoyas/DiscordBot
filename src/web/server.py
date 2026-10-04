@@ -33,6 +33,9 @@ MODEL_CHOICES = [
     "gemini-3.6-flash",
     "gemini-3.7-flash",
     "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b",
+    "allam-2-7b",
+    "qwen/qwen3.8-27b",
 ]
 
 # Quota hints from the project's rate-limits page (RPM · RPD), shown in /models list.
@@ -45,7 +48,10 @@ MODEL_QUOTAS = {
     "gemini-3.5-flash": "5 RPM · 20 RPD",
     "gemini-3.6-flash": "5 RPM · 20 RPD",
     "gemini-3.7-flash": "5 RPM · 20 RPD",
-    "openai/gpt-oss-120b": "Groq · needs GROQ_API_KEY",
+    "openai/gpt-oss-120b": "Groq · 30 RPM · 1K RPD · needs GROQ_API_KEY",
+    "openai/gpt-oss-20b": "Groq · 30 RPM · 1K RPD · needs GROQ_API_KEY",
+    "allam-2-7b": "Groq · 30 RPM · 7K RPD · needs GROQ_API_KEY",
+    "qwen/qwen3.8-27b": "Groq · 30 RPM · 1K RPD · needs GROQ_API_KEY",
 }
 
 

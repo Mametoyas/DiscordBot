@@ -1,5 +1,7 @@
 # CHANGELOG.md
 
+## 2026-10-03 — all Groq chat models (11 choices)
+
 ## 2026-10-03 — Groq second provider (gpt-oss-120b)
 - `core/llm.py`: Groq models route to Groq OpenAI-compatible API (`GROQ_MODELS`, single key, no new deps). `status()` reports provider; `set_groq_key()` for runtime.
 - `MODEL_CHOICES` + `/models list` + grounding include `openai/gpt-oss-120b`; `/models set` warns if `GROQ_API_KEY` missing.
