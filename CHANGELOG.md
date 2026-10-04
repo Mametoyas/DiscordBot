@@ -1,5 +1,9 @@
 # CHANGELOG.md
 
+## 2026-10-03 — Groq second provider (gpt-oss-120b)
+- `core/llm.py`: Groq models route to Groq OpenAI-compatible API (`GROQ_MODELS`, single key, no new deps). `status()` reports provider; `set_groq_key()` for runtime.
+- `MODEL_CHOICES` + `/models list` + grounding include `openai/gpt-oss-120b`; `/models set` warns if `GROQ_API_KEY` missing.
+
 ## 2026-10-03 — drop retired 2.x models (7 left)
 
 ## 2026-10-03 — quota-based model list (9 models)

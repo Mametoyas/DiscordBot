@@ -28,6 +28,7 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 
 if config.GEMINI_KEYS:
     llm.configure(config.GEMINI_KEYS, config.GEMINI_MODEL, config.SYSTEM_PROMPT)
+    llm.set_groq_key(config.GROQ_API_KEY)
     gemini = llm.get_client()
 else:
     gemini = None
@@ -126,6 +127,11 @@ async def models_set_cmd(interaction: discord.Interaction, name: str):
     llm.get_client().set_model(name)
     warn = "" if name.strip() in MODEL_CHOICES else (
         " ⚠️ ชื่อนี้ไม่อยู่ในลิสต์ที่ยืนยันว่ามีจริง — ถ้าเจอ 404 ให้ `/models set` กลับมาตัวใน `/models list`")
+    from src.core.llm import GROQ_MODELS as _GROQ
+
+    s = llm.get_client().status()
+    if name.strip() in _GROQ and not s.get("groq_key"):
+        warn += " ⚠️ ยังไม่มี GROQ_API_KEY — ใส่ใน ENV แล้ว restart ก่อน"
     await interaction.response.send_message(
         f"✅ เปลี่ยน backbone เป็น `{name.strip()}` แล้ว (มีผลทันทีทั้ง @Bot และ /ask){warn}",
         ephemeral=True,

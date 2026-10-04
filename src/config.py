@@ -19,6 +19,8 @@ if not GEMINI_KEYS and os.getenv("GEMINI_KEY"):  # legacy single-key name
 
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
 
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()
+
 AUTO_REPLY_CHANNEL_IDS = {
     c.strip() for c in os.getenv("AUTO_REPLY_CHANNEL_IDS", "").split(",") if c.strip()
 }

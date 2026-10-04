@@ -16,6 +16,12 @@ from src.utils.json_helper import extract_json  # noqa: F401 (re-exported for ag
 log = logging.getLogger("gemini-bot")
 
 GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
+GROQ_API_BASE = "https://api.groq.com/openai/v1/chat/completions"
+
+# Models served by Groq (OpenAI-compatible API) instead of Gemini.
+GROQ_MODELS = {"openai/gpt-oss-120b", "openai/gpt-oss-20b", "llama-3.3-70b-versatile"}
+
+_groq_key: str = ""
 
 _client: "GeminiRotator | None" = None
 _default_system: str = (
@@ -24,7 +30,7 @@ _default_system: str = (
 
 
 def configure(keys: list[str], model: str = "gemini-2.0-flash", system_prompt: str | None = None):
-    global _client, _default_system
+    global _client, _default_system, _groq_key
     if system_prompt:
         _default_system = system_prompt
     _client = GeminiRotator(keys, model)
@@ -34,6 +40,13 @@ def get_client() -> "GeminiRotator":
     if _client is None:
         raise RuntimeError("llm not configured — bot.py must call llm.configure() first")
     return _client
+
+
+def set_groq_key(key: str):
+    """Groq key can be set/rotated at runtime (env GROQ_API_KEY at boot)."""
+    global _groq_key
+    _groq_key = (key or "").strip()
+    log.info("Groq key %s", "set" if _groq_key else "cleared")
 
 
 async def generate_text(
@@ -103,12 +116,43 @@ class GeminiRotator:
             self._cycle = itertools.cycle(range(len(self._keys)))
         return added
 
+    async def _groq_generate(self, messages: list[dict], timeout: float, *,
+                               system: str | None, temperature: float,
+                               max_tokens: int) -> str:
+        """OpenAI-compatible chat via Groq (single key, no rotation)."""
+        if not _groq_key:
+            raise RuntimeError("GROQ_API_KEY not set — add it in .env or ENV, then restart")
+        payload = {
+            "model": self.model,
+            "messages": ([{"role": "system", "content": system or _default_system}]
+                         + [{"role": ("assistant" if m["role"] == "model" else "user"),
+                             "content": m["text"]} for m in messages]),
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            try:
+                r = await client.post(
+                    GROQ_API_BASE, json=payload,
+                    headers={"Authorization": f"Bearer {_groq_key}"})
+            except httpx.HTTPError as e:
+                raise RuntimeError(f"Groq request failed: {e}")
+        if r.status_code != 200:
+            raise RuntimeError(f"Groq error HTTP {r.status_code}: {r.text[:300]}")
+        try:
+            return r.json()["choices"][0]["message"]["content"].strip()
+        except (KeyError, IndexError):
+            raise RuntimeError(f"Groq ตอบแปลก: {r.text[:300]}")
+
     def status(self) -> dict:
         import time as _t
 
         now = _t.time()
         resting = sum(1 for t in self._dead.values() if t > now)
-        return {"model": self.model, "keys": len(self._keys), "cooling_down": resting}
+        provider = "groq" if self.model in GROQ_MODELS else "gemini"
+        return {"model": self.model, "provider": provider,
+                "keys": len(self._keys), "cooling_down": resting,
+                "groq_key": bool(_groq_key)}
 
     async def generate(
         self,
@@ -120,6 +164,10 @@ class GeminiRotator:
         max_tokens: int = 1500,
     ) -> str:
         """messages = [{'role': 'user'|'model', 'text': str}]"""
+        if self.model in GROQ_MODELS:
+            return await self._groq_generate(messages, timeout,
+                                             system=system, temperature=temperature,
+                                             max_tokens=max_tokens)
         contents = [
             {"role": ("model" if m["role"] == "model" else "user"),
              "parts": [{"text": m["text"]}]} for m in messages
