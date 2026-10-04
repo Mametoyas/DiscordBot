@@ -120,8 +120,10 @@ async def models_set_cmd(interaction: discord.Interaction, name: str):
         await interaction.response.send_message(_LLM_DENY, ephemeral=True)
         return
     llm.get_client().set_model(name)
+    warn = "" if name.strip() in MODEL_CHOICES else (
+        " ⚠️ ชื่อนี้ไม่อยู่ในลิสต์ที่ยืนยันว่ามีจริง — ถ้าเจอ 404 ให้ `/models set` กลับมาตัวใน `/models list`")
     await interaction.response.send_message(
-        f"✅ เปลี่ยน backbone เป็น `{name.strip()}` แล้ว (มีผลทันทีทั้ง @Bot และ /ask)",
+        f"✅ เปลี่ยน backbone เป็น `{name.strip()}` แล้ว (มีผลทันทีทั้ง @Bot และ /ask){warn}",
         ephemeral=True,
     )
 

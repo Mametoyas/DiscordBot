@@ -1,5 +1,8 @@
 # CHANGELOG.md
 
+## 2026-10-03 — real model list only
+- `MODEL_CHOICES` เหลือ 4 ตัวที่มีจริง (`2.0-flash`, `2.5-flash`, `2.5-flash-lite`, `2.5-pro`); default กลับเป็น `gemini-2.0-flash`. `/models set` ชื่ออื่นได้แต่จะเตือนว่าเสี่ยง 404.
+
 ## 2026-10-03 — LLMeditor role + model grounding
 - `bot.py`: `/models` `/model` `/addkey` `/llmstatus` now allow server owner OR `LLMeditor` role (`_can_manage_llm`).
 - `message_handler.py`: every chat reply is grounded with the real backbone model + switchable list — stops GPT-4o/Claude hallucinations.
