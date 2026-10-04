@@ -15,7 +15,7 @@ async def plan(user_text: str, message, prefetch: dict | None = None) -> dict:
     prefetch = prefetch or {}
     detected = detect_language(user_text)
     prompt = build_planning_prompt(message, user_text, prefetch)
-    prompt += f"\n\n{language_instruction(detected, 'plan')}\nReturn JSON only: {{\"reasoning\":\"...\",\"actions\":[...]}} — no reply field."
+    prompt += f"\n\n{language_instruction(detected, 'plan')}\nReturn JSON only: {{\"reasoning\":\"...\",\"actions\":[...]}} — no reply field. If genuinely torn between 2-4 concrete options that change the outcome, you may ALSO add \"question\":\"...\" and \"options\":[\"...\"...] (user picks a button or types their own); otherwise infer defaults and omit them."
     raw = await llm.generate_text(prompt, temperature=0.0)
     parsed = llm.extract_json(raw)
     if not parsed or not isinstance(parsed, dict):
@@ -53,4 +53,11 @@ async def plan(user_text: str, message, prefetch: dict | None = None) -> dict:
             deduped.insert(0, {"skill": "restructureServer", "params": {"layout": layout}})
             log.info("[Agent/Plan] layout extracted from message: %d categories", len(layout))
 
-    return {"reasoning": parsed.get("reasoning", ""), "actions": deduped}
+    options = parsed.get("options") if isinstance(parsed.get("options"), list) else []
+    options = [str(o)[:80] for o in options if o][:4]
+    question = parsed.get("question") if isinstance(parsed.get("question"), str) else None
+    if not (question and options):
+        question, options = None, []
+
+    return {"reasoning": parsed.get("reasoning", ""), "actions": deduped,
+            "question": question, "options": options}

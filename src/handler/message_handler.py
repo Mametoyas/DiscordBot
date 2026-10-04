@@ -153,7 +153,13 @@ async def handle_message(message: discord.Message, client: discord.Client):
             _agent_cooldowns[message.author.id] = now
             async with message.channel.typing():
                 try:
+                    from src.utils.choice import request_choice
                     from src.utils.confirm import describe_action, request_confirm
+
+                    async def _choice_fn(question: str, options: list[str]) -> tuple:
+                        return await request_choice(
+                            client, message.channel, message.author.id,
+                            question, options, timeout=120.0)
 
                     async def _confirm_plan(actions: list[dict]) -> bool:
                         lines = [f"{i+1}. {describe_action(a.get('skill', ''), a.get('params') or {})}"
@@ -162,7 +168,9 @@ async def handle_message(message: discord.Message, client: discord.Client):
                             message.channel, message.author.id,
                             "จะให้ทำตามนี้มั้ย?\n" + "\n".join(lines), timeout=60.0)
 
-                    result = await run_agent(content, message, confirm_fn=_confirm_plan)
+                    result = await run_agent(content, message,
+                                             confirm_fn=_confirm_plan,
+                                             choice_fn=_choice_fn)
                     if result.get("reply") is None:
                         # No server action planned -> chat freely (with memory)
                         # instead of a stiff out-of-scope refusal.

@@ -1,5 +1,9 @@
 # CHANGELOG.md
 
+## 2026-10-03 — clarify-with-choices round
+- `src/utils/choice.py` (new): ❓ buttons (≤4 options) + free-text custom answer (120s); requester-only.
+- Planner may return `question`+`options` when torn; `agent.run(choice_fn=)` asks once then re-plans with the answer (never twice). Prompt documents when to clarify vs infer.
+
 ## 2026-10-03 — autonomous plans + plan-level confirm
 - Planner `AUTONOMOUS DEFAULTS`: เติม optional เอง (ยศเกม: สี/hoist/mentionable/สิทธิ์ voice) ไม่ถามซ้ำ — ผู้ใช้ตรวจผ่านปุ่มก่อนรันเสมอ.
 - `agent.run(confirm_fn=)`: มี action → โชว์แผนเป็นข้อๆ + ปุ่ม ✅/❌ ก่อน execute; ปฏิเสธ/หมดเวลา = ยกเลิก. `executor(pre_confirmed=)` ข้าม confirm ซ้ำของ skill อันตราย.
