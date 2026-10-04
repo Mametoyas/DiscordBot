@@ -19,7 +19,7 @@ from src.core import llm
 from src.handler import message_handler
 from src.utils import snipe_manager
 from src.web import server as webadmin
-from src.web.server import MODEL_CHOICES
+from src.web.server import MODEL_CHOICES, MODEL_QUOTAS
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("gemini-bot")
@@ -105,7 +105,11 @@ async def models_list_cmd(interaction: discord.Interaction):
         await interaction.response.send_message(_LLM_DENY, ephemeral=True)
         return
     current = llm.get_client().status()["model"]
-    lines = [(f"✅ `{m}` ← ใช้อยู่" if m == current else f"▫️ `{m}`") for m in MODEL_CHOICES]
+    lines = []
+    for m in MODEL_CHOICES:
+        mark = "✅" if m == current else "▫️"
+        quota = MODEL_QUOTAS.get(m, "")
+        lines.append(f"{mark} `{m}`" + (f" — {quota}" if quota else "") + (" ← ใช้อยู่" if m == current else ""))
     await interaction.response.send_message(
         "🧠 โมเดลที่ใช้ได้:\n" + "\n".join(lines)
         + "\n\nเปลี่ยนด้วย `/models set <ชื่อโมเดล>`",

@@ -25,11 +25,29 @@ ADMIN_TOKEN = ""
 CLIENT = None  # discord.Client, set by start()
 
 MODEL_CHOICES = [
-    "gemini-2.0-flash",
-    "gemini-2.5-flash",
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
     "gemini-2.5-flash-lite",
-    "gemini-2.5-pro",
+    "gemini-3.8-flash",
+    "gemini-2.5-flash",
+    "gemini-3-flash",
+    "gemini-3.5-flash",
+    "gemini-3.6-flash",
+    "gemini-3.7-flash",
 ]
+
+# Quota hints from the project's rate-limits page (RPM · RPD), shown in /models list.
+MODEL_QUOTAS = {
+    "gemini-3.5-flash-lite": "15 RPM · 500 RPD ⭐ highest",
+    "gemini-3.1-flash-lite": "15 RPM · 500 RPD",
+    "gemini-2.5-flash-lite": "10 RPM · 250K TPM · 20 RPD",
+    "gemini-3.8-flash": "5 RPM · 20 RPD",
+    "gemini-2.5-flash": "5 RPM · 20 RPD",
+    "gemini-3-flash": "5 RPM · 20 RPD",
+    "gemini-3.5-flash": "5 RPM · 20 RPD",
+    "gemini-3.6-flash": "5 RPM · 20 RPD",
+    "gemini-3.7-flash": "5 RPM · 20 RPD",
+}
 
 
 class _RingHandler(logging.Handler):

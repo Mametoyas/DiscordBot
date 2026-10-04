@@ -1,5 +1,8 @@
 # CHANGELOG.md
 
+## 2026-10-03 — quota-based model list (9 models)
+- `MODEL_CHOICES` = 9 text-out models ตามตาราง quota จริง, เรียงตามโควตา; default `gemini-3.5-flash-lite` (15 RPM/500 RPD). `/models list` โชว์ quota แต่ละตัว.
+
 ## 2026-10-03 — real model list only
 - `MODEL_CHOICES` เหลือ 4 ตัวที่มีจริง (`2.0-flash`, `2.5-flash`, `2.5-flash-lite`, `2.5-pro`); default กลับเป็น `gemini-2.0-flash`. `/models set` ชื่ออื่นได้แต่จะเตือนว่าเสี่ยง 404.
 

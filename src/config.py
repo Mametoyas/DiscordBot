@@ -17,7 +17,7 @@ GEMINI_KEYS = [k.strip() for k in os.getenv("GEMINI_KEYS", "").split(",") if k.s
 if not GEMINI_KEYS and os.getenv("GEMINI_KEY"):  # legacy single-key name
     GEMINI_KEYS = [os.getenv("GEMINI_KEY").strip()]
 
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
 
 AUTO_REPLY_CHANNEL_IDS = {
     c.strip() for c in os.getenv("AUTO_REPLY_CHANNEL_IDS", "").split(",") if c.strip()
