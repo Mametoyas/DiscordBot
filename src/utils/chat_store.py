@@ -48,6 +48,8 @@ create index if not exists chat_history_lookup
 
 _local: dict[tuple, deque] = defaultdict(lambda: deque(maxlen=config.HISTORY_LEN * 2))
 
+_seeded_channels: set[str] = set()  # channels already backfilled this restart
+
 ALIAS_SETUP = """
 create table if not exists member_aliases (
   guild_id text not null,
@@ -109,21 +111,22 @@ class ChatStore:
             "Content-Type": "application/json",
         }
 
-    def _local_get(self, channel_id, user_id) -> list[dict]:
-        return list(_local[(str(channel_id), str(user_id))])
+    def _local_get(self, channel_id, user_id=None) -> list[dict]:
+        # Channel-shared pool: everyone in the channel sees the same history.
+        return list(_local[(str(channel_id), "*")])
 
     def _local_add(self, channel_id, user_id, role: str, text: str):
-        _local[(str(channel_id), str(user_id))].append({"role": role, "text": text[:2000]})
+        _local[(str(channel_id), "*")].append({"role": role, "text": text[:2000]})
 
-    async def _fetch_all(self, channel_id, user_id, limit: int) -> list[dict]:
-        """Newest-last messages, up to limit. Never raises."""
+    async def _fetch_all(self, channel_id, user_id=None, limit: int = 40) -> list[dict]:
+        """Newest-last messages in this CHANNEL (all users share). Never raises."""
         if not self.enabled:
-            return self._local_get(channel_id, user_id)[-limit:]
+            return self._local_get(channel_id)[-limit:]
         try:
             c = self._client_or_new()
             r = await c.get(
                 f"{self.url}/rest/v1/{TABLE}"
-                f"?channel_id=eq.{channel_id}&user_id=eq.{user_id}"
+                f"?channel_id=eq.{channel_id}"
                 f"&select=role,text&order=id.desc&limit={limit}",
                 headers=self._headers(),
             )
@@ -131,19 +134,19 @@ class ChatStore:
             return [{"role": row["role"], "text": row["text"]} for row in reversed(r.json())]
         except Exception as e:  # noqa: BLE001 — fallback must never break chat
             log.warning("[ChatStore] get failed, using local memory: %s", e)
-            return self._local_get(channel_id, user_id)[-limit:]
+            return self._local_get(channel_id)[-limit:]
 
-    async def get(self, channel_id, user_id) -> list[dict]:
+    async def get(self, channel_id, user_id=None) -> list[dict]:
         """Newest-last list of {role, text}, capped at keep_pairs*2. Never raises."""
-        return await self._fetch_all(channel_id, user_id, self.keep_pairs * 2)
+        return await self._fetch_all(channel_id, limit=self.keep_pairs * 2)
 
-    async def get_with_summary(self, channel_id, user_id) -> tuple:
+    async def get_with_summary(self, channel_id, user_id=None) -> tuple:
         """(summary|None, recent messages). Overflow older than the keep window
         is compressed into one summary (discord-agent style). Never raises."""
         import os as _os
 
         compress_at = int(_os.getenv("CHAT_COMPRESS_AT", "60") or 60)
-        msgs = await self._fetch_all(channel_id, user_id, compress_at)
+        msgs = await self._fetch_all(channel_id, limit=compress_at)
         window = self.keep_pairs * 2
         if len(msgs) <= window:
             return None, msgs
@@ -187,21 +190,54 @@ class ChatStore:
             )
             r.raise_for_status()
             if random.random() < 0.05:
-                await self._prune(channel_id, user_id)
+                await self._prune(channel_id)
         except Exception as e:  # noqa: BLE001
             log.warning("[ChatStore] add failed (local copy kept): %s", e)
 
-    async def _prune(self, channel_id, user_id):
+    async def _prune(self, channel_id):
         cutoff = (datetime.now(timezone.utc) - timedelta(days=self.retention_days)).isoformat()
         try:
             c = self._client_or_new()
             await c.delete(
                 f"{self.url}/rest/v1/{TABLE}"
-                f"?channel_id=eq.{channel_id}&user_id=eq.{user_id}&created_at=lt.{cutoff}",
+                f"?channel_id=eq.{channel_id}&created_at=lt.{cutoff}",
                 headers=self._headers(),
             )
         except Exception as e:  # noqa: BLE001
             log.warning("[ChatStore] prune failed: %s", e)
+
+    async def ensure_backfilled(self, channel_id, guild_id, discord_messages: list) -> int:
+        """Seed the channel pool from real Discord history (oldest-first).
+
+        discord_messages: iterable of objects with .author (bot/name/display_name),
+        .content, .author.id. Skips empties/commands. Returns # seeded. Runs only
+        when the pool is empty (tracked per restart + rechecked remotely).
+        """
+        if str(channel_id) in _seeded_channels:
+            return 0
+        _seeded_channels.add(str(channel_id))
+        existing = await self._fetch_all(channel_id, limit=1)
+        if existing:
+            return 0
+        count = 0
+        for m in discord_messages:
+            text = (m.content or "").strip()
+            if not text or len(text) > 2000:
+                continue
+            if text.startswith(("/", "!", "@Bot")) and len(text) < 30:
+                continue  # skip bare commands/pings, keep real talk
+            author = m.author
+            if getattr(author, "bot", False):
+                role, label = "model", getattr(author, "display_name", "Bot")
+            else:
+                role = "user"
+                label = getattr(author, "display_name", None) or getattr(author, "name", "?")
+            await self.add(channel_id, getattr(author, "id", "?"), role,
+                           f"{label}: {text}", guild_id)
+            count += 1
+        if count:
+            log.info("[ChatStore] backfilled %d messages into channel %s", count, channel_id)
+        return count
 
     # ---- member aliases: custom nicknames the bot remembers per server ----
 
@@ -215,7 +251,7 @@ class ChatStore:
             r = await c.get(
                 f"{self.url}/rest/v1/member_aliases",
                 headers=self._headers(),
-                params={"guild_id": f"eq.{guild_id}", "alias": f"eq.{alias.strip()}",
+                params={"guild_id": f"eq.{guild_id}", "alias": f"ilike.{alias.strip()}",
                         "select": "user_id", "limit": 1},
             )
             r.raise_for_status()

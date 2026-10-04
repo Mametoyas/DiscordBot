@@ -12,7 +12,7 @@ Discord AI bot using hosted **Gemini API** — no local LLM, no own server. Runs
 - `/addkey <key>` → เพิ่ม API key ตอนรัน (owner only, ephemeral)
 - `/llmstatus` → ดู model + จำนวน keys (owner only)
 - Every message in `AUTO_REPLY_CHANNEL_IDS` + DM → chat Q&A
-- Chat memory is **per-user-in-channel**, persisted to **Supabase** (`SUPABASE_URL`/`SUPABASE_KEY`; SQL in `src/utils/chat_store.py`) — survives restart; falls back to in-memory if unset
+- Chat memory is **channel-shared** (group-chat style: everyone in the channel shares one pool, messages labeled `Name:`) + auto-**backfills** recent Discord history on first use, persisted to **Supabase** (`SUPABASE_URL`/`SUPABASE_KEY`; SQL in `src/utils/chat_store.py`) — survives restart; falls back to in-memory if unset
 - Custom member nicknames (`@Bot จำไว้ว่าไอ้เสือคือ @X`) stored in Supabase `member_aliases` (+ local fallback); name search tries username → server nick → remembered alias → substring
 - Shared guild memory (`@Bot จำไว้ว่า...` / `ลืมเรื่อง...`) in Supabase `memories`, auto-injected into the planner; long chat histories compress into summaries
 - Destructive skills (kick/ban/clear/delete channel/thread) ask ✅/❌ confirmation first (requester-only, 60s)

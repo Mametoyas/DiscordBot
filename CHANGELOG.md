@@ -1,5 +1,9 @@
 # CHANGELOG.md
 
+## 2026-10-03 — channel-shared group memory + backfill
+- `chat_store`: pool keyed by channel only (multi-user group chat); `ensure_backfilled()` seeds the pool from real Discord history once per restart; prune channel-based; fixed `guild_id=None` shadow bug in `ask_chat`.
+- `message_handler`: chat path backfills (50 msgs) before answering; group-chat framing in system prompt.
+
 ## 2026-10-03 — clarify-with-choices round
 - `src/utils/choice.py` (new): ❓ buttons (≤4 options) + free-text custom answer (120s); requester-only.
 - Planner may return `question`+`options` when torn; `agent.run(choice_fn=)` asks once then re-plans with the answer (never twice). Prompt documents when to clarify vs infer.

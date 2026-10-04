@@ -30,29 +30,38 @@ def get_history(channel_id: int, user_id: int | None = None) -> list[dict]:
     """Sync peek at the local fallback copy (Supabase reads are async)."""
     from src.utils.chat_store import _local
 
-    if user_id is None:
-        out: list[dict] = []
-        for (ch, _u), dq in _local.items():
-            if str(ch) == str(channel_id):
-                out.extend(dq)
-        return out
-    return list(_local.get((str(channel_id), str(user_id)), []))
+    return list(_local.get((str(channel_id), "*"), []))
 
 
 def push_history(channel_id: int, role: str, text: str, user_id: int | None = None):
     from src.utils.chat_store import _local
 
-    _local[(str(channel_id), str(user_id))].append({"role": role, "text": text[:2000]})
+    _local[(str(channel_id), "*")].append({"role": role, "text": text[:2000]})
+
+
+async def backfill_channel(channel, guild_id=None, limit: int = 50):
+    """Pull recent Discord history into the shared channel pool (once per restart)."""
+    try:
+        messages = [m async for m in channel.history(limit=limit, oldest_first=True)]
+    except Exception:  # noqa: BLE001 — e.g. missing Read History permission
+        return
+    await chat_store.ensure_backfilled(channel.id, guild_id, messages)
 
 
 async def ask_chat(channel_id: int, user_text: str, user_id: int | None = None,
                  system: str | None = None, guild_id=None) -> str:
-    """Chat Q&A with per-user-in-channel memory (DM / auto-channel / /ask).
+    """Group-chat Q&A with CHANNEL-shared memory (DM / auto-channel / /ask).
 
-    In guild channels, server-level knowledge (the user's remembered nicknames
-    + matching shared facts) is injected so chat answers agree with the agent.
+    Everyone in the channel shares one pool; messages are labeled Name:.
+    In guild channels, server-level knowledge (asker's nicknames + matching
+    shared facts) is injected so chat answers agree with the agent.
     """
     summary, recent = await chat_store.get_with_summary(channel_id, user_id)
+    msgs = recent + [{"role": "user", "text": user_text}]
+    sys = system or config.SYSTEM_PROMPT
+    if guild_id is not None:
+        sys += ("\n\n[Group chat: messages below come from MULTIPLE people, each labeled "
+                "Name:. Answer the current speaker, but use anyone's context when relevant.]")
     msgs = recent + [{"role": "user", "text": user_text}]
     sys = system or config.SYSTEM_PROMPT
     try:  # ground the model about its own backbone (stops GPT-4o/Claude hallucinations)
@@ -78,7 +87,6 @@ async def ask_chat(channel_id: int, user_text: str, user_id: int | None = None,
         except Exception:  # noqa: BLE001 — injection is best-effort
             pass
     reply = await llm.get_client().generate(msgs, system=sys)
-    guild_id = None
     await chat_store.add(channel_id, user_id, "user", user_text, guild_id)
     await chat_store.add(channel_id, user_id, "model", reply, guild_id)
     return reply
@@ -90,8 +98,8 @@ async def _mention_system(bot_name: str, message: discord.Message) -> str:
         f"You are {bot_name}, a friendly Discord bot talking directly to a user who mentioned you. "
         "Reply concisely in the user's language (default Thai). Be playful when they are playful — "
         "you may guess, joke, and chat freely like a friend.\n"
-        "You REMEMBER this user across restarts (per-user memory is automatic) — recall preferences "
-        "they told you, and never claim you can't remember.\n"
+        "You REMEMBER this channel across restarts (shared channel memory is automatic) — recall what "
+        "ANYONE here said, and never claim you can't remember.\n"
         "Never claim you SAVED something permanently — only explicit remember commands persist "
         "(handled by the server system, not you); if they teach you a nickname, just acknowledge it warmly.\n"
         "Never claim you CANNOT see profiles, mentions, or server info — the server system CAN look anyone up; "
@@ -196,6 +204,7 @@ async def handle_message(message: discord.Message, client: discord.Client):
 
     async with message.channel.typing():
         try:
+            await backfill_channel(message.channel, getattr(message.guild, "id", None))
             reply = await ask_chat(
                 message.channel.id, f"{message.author.display_name}: {content}",
                 message.author.id,
