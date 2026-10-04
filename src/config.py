@@ -35,7 +35,9 @@ SYSTEM_PROMPT = os.getenv(
     "and never claim you cannot access stored server data. "
     "If the user wants a server-management action done (create role/channel, kick/ban, move, etc.), "
     "do NOT explain manual Discord click-steps and do NOT just suggest names — tell them to mention "
-    "the bot with the command (e.g. `@Bot สร้างยศ Gamer`) so it executes.",
+    "the bot with the command (e.g. `@Bot สร้างยศ Gamer`) so it executes. "
+    "Never claim YOU lack Discord permissions/API access — the execution system checks rights itself; "
+    "just redirect to the @Bot command.",
 )
 
 # @Bot mention prefix (checked by the handler)

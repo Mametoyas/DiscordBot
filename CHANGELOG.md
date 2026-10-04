@@ -1,5 +1,8 @@
 # CHANGELOG.md
 
+## 2026-10-03 — never fake permission limits
+- Both chat prompts: never claim the bot lacks Discord permissions/API — redirect to `@Bot <command>`.
+
 ## 2026-10-03 — infer names, never manual-steps
 - Planner `INFERRED NAMES`: vague-but-inferable names (ยศสำหรับ gamer → Gamer, typos ok) plan immediately; no suggesting, no manual instructions.
 - Default chat prompt: server-action requests redirect to `@Bot <command>` instead of click-steps.
