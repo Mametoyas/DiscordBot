@@ -1,5 +1,8 @@
 # CHANGELOG.md
 
+## 2026-10-03 — thread skills (48 skills)
+- `src/skills/threads.py` (new): `createThread`/`listThreads`/`archiveThread`/`deleteThread` (confirm-gated). Threads removed from planner out-of-scope list.
+
 ## 2026-10-03 — all Groq chat models (11 choices)
 
 ## 2026-10-03 — Groq second provider (gpt-oss-120b)

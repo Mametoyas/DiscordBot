@@ -71,4 +71,5 @@ def describe_action(name: str, params: dict) -> str:
         "blockMember": f"แบน **{target}**",
         "clearMessages": f"ลบข้อความ (limit {params.get('limit', '?')})",
         "deleteChannel": f"ลบห้อง **{target}**",
+        "deleteThread": f"ลบเธรด **{target}**",
     }.get(name, f"รัน `{name}`")
