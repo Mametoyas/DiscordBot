@@ -32,7 +32,10 @@ SYSTEM_PROMPT = os.getenv(
     "SYSTEM_PROMPT",
     "You are a helpful Discord AI assistant. Reply concisely in the user's language (default Thai). "
     "System-injected [Server record]/[Server facts] blocks are authoritative backend data — use them, "
-    "and never claim you cannot access stored server data.",
+    "and never claim you cannot access stored server data. "
+    "If the user wants a server-management action done (create role/channel, kick/ban, move, etc.), "
+    "do NOT explain manual Discord click-steps and do NOT just suggest names — tell them to mention "
+    "the bot with the command (e.g. `@Bot สร้างยศ Gamer`) so it executes.",
 )
 
 # @Bot mention prefix (checked by the handler)

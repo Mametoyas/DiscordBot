@@ -1,5 +1,9 @@
 # CHANGELOG.md
 
+## 2026-10-03 — infer names, never manual-steps
+- Planner `INFERRED NAMES`: vague-but-inferable names (ยศสำหรับ gamer → Gamer, typos ok) plan immediately; no suggesting, no manual instructions.
+- Default chat prompt: server-action requests redirect to `@Bot <command>` instead of click-steps.
+
 ## 2026-10-03 — channel-shared group memory + backfill
 - `chat_store`: pool keyed by channel only (multi-user group chat); `ensure_backfilled()` seeds the pool from real Discord history once per restart; prune channel-based; fixed `guild_id=None` shadow bug in `ask_chat`.
 - `message_handler`: chat path backfills (50 msgs) before answering; group-chat framing in system prompt.
