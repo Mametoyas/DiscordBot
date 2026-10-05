@@ -56,7 +56,7 @@ register(Skill(
     name="rememberFact",
     description="Saves a shared fact everyone in the server can recall later (nickname-for-member goes to setMemberAlias instead).",
     params={
-        "key": "string - Short title of the fact (infer from the subject, e.g. ตี้พับจี; never '?').",
+        "key": "string (optional if the message names a team — ตี้/ทีม/แก๊ง/กลุ่ม is inferred; else required, never '?').",
         "content": "string (optional) - The fact itself (if omitted, member mentions in the message are used).",
         "category": "string (optional) - grouping label, default 'general'.",
     },
