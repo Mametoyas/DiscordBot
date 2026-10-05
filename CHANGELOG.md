@@ -1,5 +1,16 @@
 # CHANGELOG.md
 
+## 2026-10-05 — ENHANCE.md hardening pass (constitution + privacy + rate-limit + SQLite)
+- `src/core/constitution.py` (new): fixed non-overridable rules, instruction hierarchy, `sanitize/wrap_untrusted/wrap_user`, output guard, `PROMPT_VERSION=constitution-v1`. Persona default "Oi".
+- `src/agent/prompts.py`: planner + summarizer prepend constitution; prefetch/facts wrapped as UNTRUSTED data (stored-injection defense); user command in `<USER>` block.
+- `src/handler/message_handler.py`: chat/agent rate limits (chat 5s cooldown + 6/min, agent 10/min, guild 40/min, env-tunable); facts/summary wrapped untrusted; output guard; injection attempts logged not punished; fixed duplicated `msgs/sys` lines that wiped the constitution.
+- `src/utils/rate_limit.py` (new): dependency-free token-bucket limiter + Thai deny/quota messages.
+- `src/core/llm.py`: quota/5xx exhaustion now raises Thai-friendly message instead of raw HTTP errors; token log no longer prints prefix (len only).
+- `src/utils/chat_store.py`: SQLite fallback (`SQLITE_PATH`, stdlib only) for chat/aliases/memories when Supabase absent; `delete_user_data()` + `user_data_summary()` for privacy commands.
+- `bot.py`: new `/privacy` + `/forget-me` (ephemeral); `/help` lists them.
+- `tests/`: `test_constitution.py` (incl. 3 injection patterns), `test_rate_limit.py` (incl. flood recovery), `test_sqlite_fallback.py` (chat/alias/fact/forget-me roundtrips). NOTE: not executed — this machine has no Python (see TESTER.md for live run).
+- `.env.example`: `SQLITE_PATH` + `CHAT_COOLDOWN_SEC/CHAT_PER_MIN/AGENT_PER_MIN/GUILD_PER_MIN`.
+
 ## 2026-10-03 — dashboard: LLM usage + deploy provenance
 - `core/llm.py`: per-model/per-key counters (req/ok/err, in/out tokens from `usageMetadata`/`usage`, last error) in `status()`.
 - `web/server.py`: `/api/status` += `usage` + `deploy` (Railway commit/deployment/env, no token needed); dashboard tables per model + per key index.

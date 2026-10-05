@@ -34,7 +34,7 @@ else:
     gemini = None
 
 _tok = config.DISCORD_TOKEN
-log.info(f"Token fingerprint: {(_tok[:6] + '…') if _tok else '(empty)'} len={len(_tok)}")
+log.info("Discord token loaded: %s (len=%d)", "yes" if _tok else "no", len(_tok))
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -82,7 +82,8 @@ async def help_cmd(interaction: discord.Interaction):
         "**💬 คุย/ถาม** — `/ask คำถาม` · DM · หรือพิมพ์ในช่อง auto-reply\n"
         "**🤖 สั่งจัดการ server** — `@Bot ...` เช่น `@Bot สร้างยศ VIP สีแดงให้ @ploy`, `@Bot timeout @เกรียน 10 นาที`, `@Bot list channels`\n"
         "**📄 ลิสต์ยาวๆ** — มีปุ่ม ◀ ▶ เปลี่ยนหน้า (กดได้เฉพาะคนสั่ง)\n"
-        "**🧠 เจ้าของ server / ยศ LLMeditor** — `/models list` · `/models set` · `/model` · `/addkey` · `/llmstatus`",
+        "**🧠 เจ้าของ server / ยศ LLMeditor** — `/models list` · `/models set` · `/model` · `/addkey` · `/llmstatus`\n"
+        "**🔒 ความเป็นส่วนตัว** — `/privacy` ดูข้อมูลของตัวเอง · `/forget-me` ลบข้อมูลของตัวเอง",
         ephemeral=True,
     )
 
@@ -188,6 +189,46 @@ async def llmstatus_cmd(interaction: discord.Interaction):
         f"🧠 model: `{s['model']}`\n🔑 keys: {s['keys']} (พักอยู่ {s['cooling_down']})",
         ephemeral=True,
     )
+
+
+@tree.command(name="privacy", description="ดูว่าบอทจำอะไรเกี่ยวกับคุณไว้บ้าง")
+async def privacy_cmd(interaction: discord.Interaction):
+    """ENHANCE.md Phase 3: consent & data rights (self-serve, ephemeral)."""
+    from src.utils.chat_store import store as _store
+
+    try:
+        info = await _store.user_data_summary(
+            getattr(interaction.guild, "id", None), interaction.user.id)
+    except Exception:  # noqa: BLE001
+        info = {"chat_rows": "?", "aliases": [], "backend": "?"}
+    aliases = ", ".join(info.get("aliases", [])) or "—"
+    await interaction.response.send_message(
+        "🔒 **ข้อมูลที่บอทจำเกี่ยวกับคุณ**\n"
+        f"• ข้อความแชท: {info.get('chat_rows', '?')} แถว\n"
+        f"• ชื่อเล่นที่จำไว้: {aliases}\n"
+        f"• เก็บที่: {info.get('backend', '?')} (ลบอัตโนมัติใน ~30 วัน)\n"
+        "ลบทั้งหมดด้วย `/forget-me` (DM ไม่ถูกแชร์เข้าห้องรวมโดยไม่ขออนุญาตก่อน)",
+        ephemeral=True,
+    )
+
+
+@tree.command(name="forget-me", description="ลบข้อมูลทั้งหมดที่บอทจำเกี่ยวกับคุณ")
+async def forget_me_cmd(interaction: discord.Interaction):
+    """ENHANCE.md Phase 3: hard-delete path (SQLite/Supabase/RAM)."""
+    from src.utils.chat_store import store as _store
+
+    try:
+        counts = await _store.delete_user_data(
+            getattr(interaction.guild, "id", None), interaction.user.id)
+        total = sum(counts.values())
+        await interaction.response.send_message(
+            f"🧹 ลบข้อมูลของคุณแล้ว ({total} รายการ: แชท {counts.get('chat', 0)}, "
+            f"ชื่อเล่น {counts.get('aliases', 0)})",
+            ephemeral=True,
+        )
+    except Exception as e:  # noqa: BLE001
+        await interaction.response.send_message(
+            f"❌ ลบไม่สำเร็จ: {e}", ephemeral=True)
 
 
 @client.event

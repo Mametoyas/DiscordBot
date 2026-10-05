@@ -18,6 +18,11 @@ log = logging.getLogger("gemini-bot")
 GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 GROQ_API_BASE = "https://api.groq.com/openai/v1/chat/completions"
 
+# ENHANCE.md Phase 5: graceful degradation — Thai-friendly message shown when
+# every key is rate-limited, instead of leaking raw HTTP errors to users.
+QUOTA_EXHAUSTED_MSG = ("🔋 โควต้า AI หมดชั่วคราว (free-tier) — "
+                       "พักสักครู่แล้วลองใหม่นะ ไม่ได้เสีย แค่ให้ Gemini หายใจก่อน")
+
 # Models served by Groq (OpenAI-compatible API) instead of Gemini.
 GROQ_MODELS = {"openai/gpt-oss-120b", "openai/gpt-oss-20b",
                "allam-2-7b", "qwen/qwen3.8-27b"}
@@ -243,4 +248,6 @@ class GeminiRotator:
                     last_err = str(e)
                     self._record(self.model, idx, False, err=last_err)
                     break
+        if last_err and any(s in str(last_err) for s in ("429", "403", "quota", "Quota", "500", "503")):
+            raise RuntimeError(QUOTA_EXHAUSTED_MSG)
         raise RuntimeError(f"Gemini ทุกคีย์ใช้ไม่ได้: {last_err}")

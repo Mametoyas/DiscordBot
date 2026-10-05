@@ -38,8 +38,8 @@ SYSTEM_PROMPT = os.getenv(
     "the bot with the command (e.g. `@Bot สร้างยศ Gamer`) so it executes. "
     "Never claim YOU lack Discord permissions/API access — the execution system checks rights itself; "
     "just redirect to the @Bot command. "
-    "The ONLY slash commands that exist are /ask /help /models /model /addkey /llmstatus — "
-    "NEVER invent others like /role, /kick, /ban.",
+     "The ONLY slash commands that exist are /ask /help /models /model /addkey /llmstatus /privacy /forget-me — "
+     "NEVER invent others like /role, /kick, /ban.",
 )
 
 # @Bot mention prefix (checked by the handler)
@@ -48,6 +48,15 @@ BOT_PREFIX = re.compile(r"<@!?(\d+)>")
 # Agent handler tuning
 AGENT_COOLDOWN_SEC = 2.0
 MAX_ACTIONS = 5
+
+# ENHANCE.md Phase 4 (cost-abuse): per-user/per-guild chat limits (free-tier safe).
+CHAT_COOLDOWN_SEC = float(os.getenv("CHAT_COOLDOWN_SEC", "5"))
+CHAT_PER_MIN = int(os.getenv("CHAT_PER_MIN", "6"))
+AGENT_PER_MIN = int(os.getenv("AGENT_PER_MIN", "10"))
+GUILD_PER_MIN = int(os.getenv("GUILD_PER_MIN", "40"))
+
+# ENHANCE.md Phase 3: retention disclosure (days; mirrored in chat_store pruning).
+RETENTION_DAYS = int(os.getenv("CHAT_RETENTION_DAYS", "30"))
 
 # Default messages
 DEFAULT_GREETING = "Hello, I am {botName}. Mention me with a command, e.g. `@Bot list channels`."

@@ -2,5 +2,7 @@ __pycache__/
 .venv/
 .env
 *.pyc
+# local SQLite fallback (runtime data, never commit)
+data/
 # reference clone, own repo — do not push
 discord-bot-agents/

@@ -21,8 +21,8 @@ User requirements:
 | P1 — Agent Skill `discord-bot-agent` (`~/.agents/skills/`, validated ✅) | ✅ Done | SKILL.md + skill-catalog/agent-prompts/scope-rules refs |
 | P1 — Python port: `src/` mirror (34 skills + agent) wired into mentions | ✅ Done (code, unverified live) | Guild mention → agent; DM/auto-channel → chat; `/ask` → chat |
 | P1 — Real-token verification (Discord + Gemini live test, incl. agent skills) | ⬜ Not started | Blocked: needs user tokens + machine with Python |
-| P2 — Hardening (rate-limit per user, long-reply split, error UX) | ⬜ Backlog | See TODO.md |
-| P2 — Persistence (history survives restart, e.g. Redis) | ⬜ Backlog | Currently in-memory deque |
+| P2 — Hardening (rate-limit per user, long-reply split, error UX) | ✅ Done 2026-10-05 | ENHANCE.md pass: constitution, rate_limit, quota msg, /privacy//forget-me |
+| P2 — Persistence (history survives restart, e.g. Redis) | ✅ Partial 2026-10-05 | SQLite fallback added (Supabase still recommended for durable/multi-instance) |
 | P3 — Serverless `/ask`-only variant for Vercel (optional) | ⬜ Backlog | Only if user still wants Vercel |
 
 ## Next (for the next agent)
