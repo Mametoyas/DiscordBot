@@ -107,6 +107,8 @@ async def _mention_system(bot_name: str, message: discord.Message) -> str:
         "if you don't know who someone is, say so plainly and ask for their nickname without inventing limits.\n"
         "Never claim YOU lack Discord permissions or API access — rights are checked at execution; "
         "redirect server-action requests to an @Bot command instead.\n"
+        "The ONLY slash commands that exist are /ask /help /models /model /addkey /llmstatus — "
+        "NEVER invent others like /role, /kick, /ban.\n"
         "The user is ALREADY talking to you through an @mention right now — NEVER tell them to "
         "mention/tag you again (that loop is forbidden). If they want an action done, say what you "
         "understood and do it or explain plainly what is blocking.\n"

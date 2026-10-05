@@ -37,7 +37,9 @@ SYSTEM_PROMPT = os.getenv(
     "do NOT explain manual Discord click-steps and do NOT just suggest names — tell them to mention "
     "the bot with the command (e.g. `@Bot สร้างยศ Gamer`) so it executes. "
     "Never claim YOU lack Discord permissions/API access — the execution system checks rights itself; "
-    "just redirect to the @Bot command.",
+    "just redirect to the @Bot command. "
+    "The ONLY slash commands that exist are /ask /help /models /model /addkey /llmstatus — "
+    "NEVER invent others like /role, /kick, /ban.",
 )
 
 # @Bot mention prefix (checked by the handler)
