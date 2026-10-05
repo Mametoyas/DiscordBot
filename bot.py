@@ -50,6 +50,12 @@ tree = app_commands.CommandTree(client)
 async def on_ready():
     log.info(f"Logged in as {client.user}")
     try:
+        from src.utils.db_bootstrap import ensure_tables
+
+        await ensure_tables()
+    except Exception as e:  # noqa: BLE001
+        log.warning(f"db bootstrap skipped: {e}")
+    try:
         await tree.sync()
         log.info("Slash commands synced (/ask)")
     except Exception as e:

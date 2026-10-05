@@ -1,5 +1,8 @@
 # CHANGELOG.md
 
+## 2026-10-03 — bot creates its own tables
+- `src/utils/db_bootstrap.py` (new): `ensure_tables()` on boot via asyncpg (opt-in `SUPABASE_DB_URL`); idempotent DDL + RLS + policies from `chat_store` SQL. `requirements.txt` += asyncpg.
+
 ## 2026-10-03 — recall never comes back empty-handed
 - `recall_matching`: keyword miss → recent facts → local copy (was: `[]` on any Supabase error, hiding locally remembered facts).
 
