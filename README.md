@@ -28,6 +28,8 @@ python bot.py
 
 Required env: `DISCORD_TOKEN`, `GEMINI_KEYS`. Optional: `GEMINI_MODEL` (default `gemini-2.0-flash`), `AUTO_REPLY_CHANNEL_IDS`, `HISTORY_LEN`, `SYSTEM_PROMPT`, `BOT_NAME`.
 
+Tests: `python -m unittest discover tests` (stdlib only).
+
 Also enable **MESSAGE CONTENT INTENT** + **SERVER MEMBERS INTENT** in the Discord Developer Portal (Bot → Privileged Gateway Intents) and invite with `bot` + `applications.commands` scopes. Without Members Intent, name search only sees cached members.
 
 ## Layout (mirrors `discord-bot-agents/src/`)

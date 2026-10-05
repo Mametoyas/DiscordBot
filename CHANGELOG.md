@@ -1,5 +1,10 @@
 # CHANGELOG.md
 
+## 2026-10-03 — QA pass + tests/
+- Fixed: SCOPE summoned ghost skill `getMemberInfo` → `getUserInfo` (summoning was 100% broken).
+- Fixed: `db_bootstrap` now executes statements one-by-one via `split_statements()` (asyncpg chokes on multi-statement `execute()` under poolers).
+- `tests/`: 6 stdlib-unittest files (mention ping, JSON extract, SQL splitter+schema, Thai-prefix search, local memory fallbacks, mention autofill, SCOPE-vs-registry). Run: `python -m unittest discover tests`.
+
 ## 2026-10-03 — break the mention loop
 - Chat fallback: user is already mentioning you — never say "mention @Bot" again.
 - Handler: plain-text `@BotName` without a mention entity also routes to the agent.

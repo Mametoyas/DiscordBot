@@ -10,10 +10,45 @@ bypasses RLS anyway).
 """
 
 import logging
+import re
 
 log = logging.getLogger("gemini-bot")
 
 _BOOTSTRAPPED = False
+
+
+def split_statements(script: str) -> list[str]:
+    """Split SQL on semicolons, ignoring those inside dollar-quoted (DO $$) blocks."""
+    stmts, buf, i, tag = [], [], 0, None
+    while i < len(script):
+        if tag is None:
+            m = re.match(r"\$[A-Za-z_][A-Za-z0-9_]*\$|\$\$", script[i:])
+            if m:
+                tag = m.group(0)
+                buf.append(tag)
+                i += len(tag)
+                continue
+            if script[i] == ";":
+                stmt = "".join(buf).strip()
+                if stmt:
+                    stmts.append(stmt)
+                buf = []
+                i += 1
+                continue
+            buf.append(script[i])
+            i += 1
+        else:
+            if script.startswith(tag, i):
+                buf.append(tag)
+                i += len(tag)
+                tag = None
+                continue
+            buf.append(script[i])
+            i += 1
+    tail = "".join(buf).strip()
+    if tail:
+        stmts.append(tail)
+    return stmts
 
 
 def _schema_sql() -> str:
@@ -72,7 +107,8 @@ async def ensure_tables() -> bool:
         # Transaction mode, so disable them (works in Session mode too).
         conn = await asyncpg.connect(dsn, timeout=15, statement_cache_size=0)
         try:
-            await conn.execute(_schema_sql())
+            for stmt in split_statements(_schema_sql()):
+                await conn.execute(stmt)
         finally:
             await conn.close()
         log.info("[DB] tables ensured (chat_history, member_aliases, memories)")
