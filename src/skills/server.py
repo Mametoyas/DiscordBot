@@ -96,7 +96,7 @@ async def _search_server(guild, params, message):
 
 register(Skill(
     name="searchServer",
-    description="Fuzzy-searches channels, roles, and members by name.",
+    description="Fuzzy-searches LIVE server structure (channel/role/member names). NOT for remembered facts or parties — those go to recallFacts.",
     params={"query": "string - What to search for."},
     execute=_search_server,
 ))

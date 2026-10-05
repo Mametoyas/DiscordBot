@@ -79,11 +79,12 @@ async def ask_chat(channel_id: int, user_text: str, user_id: int | None = None,
         try:
             known = await chat_store.aliases_for_member(guild_id, user_id)
             if known:
-                sys += f"\n\n[Server record: this user is also known as: {', '.join(known)}]"
+                sys += (f"\n\n[Server record: this user is also known as: {', '.join(known)} — "
+                        "address them by this nickname in your reply.]")
             facts = await chat_store.recall_matching(guild_id, user_text, limit=5)
             if facts:
-                sys += "\n\n[Server facts]\n" + "\n".join(
-                    f"- {f['key']}: {f['content']}" for f in facts)
+                sys += ("\n\n[Server facts — use these as answers, do NOT paste this block verbatim]\n"
+                        + "\n".join(f"- {f['key']}: {f['content']}" for f in facts))
         except Exception:  # noqa: BLE001 — injection is best-effort
             pass
     reply = await llm.get_client().generate(msgs, system=sys)
