@@ -1,5 +1,9 @@
 # CHANGELOG.md
 
+## 2026-10-03 — dashboard: LLM usage + deploy provenance
+- `core/llm.py`: per-model/per-key counters (req/ok/err, in/out tokens from `usageMetadata`/`usage`, last error) in `status()`.
+- `web/server.py`: `/api/status` += `usage` + `deploy` (Railway commit/deployment/env, no token needed); dashboard tables per model + per key index.
+
 ## 2026-10-03 — QA pass + tests/
 - Fixed: SCOPE summoned ghost skill `getMemberInfo` → `getUserInfo` (summoning was 100% broken).
 - Fixed: `db_bootstrap` now executes statements one-by-one via `split_statements()` (asyncpg chokes on multi-statement `execute()` under poolers).

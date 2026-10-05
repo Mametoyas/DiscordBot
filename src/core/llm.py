@@ -79,6 +79,26 @@ class GeminiRotator:
         self._cycle = itertools.cycle(range(len(keys)))
         self._lock = asyncio.Lock()
         self._dead: dict[int, float] = {}  # index -> unix time ที่กลับมาใช้ได้
+        self.usage: dict[str, dict] = {}  # model -> {requests, ok, errors, in/out tokens, last_error}
+        self.key_stats: list[dict] = [{"requests": 0, "ok": 0, "errors": 0} for _ in keys]
+
+    def _record(self, model: str, idx: int | None, ok: bool,
+                in_t: int = 0, out_t: int = 0, err: str | None = None):
+        u = self.usage.setdefault(
+            model, {"requests": 0, "ok": 0, "errors": 0,
+                    "in_tokens": 0, "out_tokens": 0, "last_error": None})
+        u["requests"] += 1
+        u["in_tokens"] += in_t
+        u["out_tokens"] += out_t
+        if ok:
+            u["ok"] += 1
+        else:
+            u["errors"] += 1
+            u["last_error"] = (err or "?")[:200]
+        if idx is not None and 0 <= idx < len(self.key_stats):
+            k = self.key_stats[idx]
+            k["requests"] += 1
+            k["ok" if ok else "errors"] += 1
 
     @property
     def key_count(self) -> int:
@@ -112,6 +132,7 @@ class GeminiRotator:
             k = k.strip()
             if k and k not in self._keys:
                 self._keys.append(k)
+                self.key_stats.append({"requests": 0, "ok": 0, "errors": 0})
                 added += 1
         if added:
             self._cycle = itertools.cycle(range(len(self._keys)))
@@ -137,13 +158,21 @@ class GeminiRotator:
                     GROQ_API_BASE, json=payload,
                     headers={"Authorization": f"Bearer {_groq_key}"})
             except httpx.HTTPError as e:
+                self._record(self.model, None, False, err=str(e))
                 raise RuntimeError(f"Groq request failed: {e}")
         if r.status_code != 200:
+            self._record(self.model, None, False, err=f"HTTP {r.status_code}")
             raise RuntimeError(f"Groq error HTTP {r.status_code}: {r.text[:300]}")
         try:
-            return r.json()["choices"][0]["message"]["content"].strip()
+            data = r.json()
+            text = data["choices"][0]["message"]["content"].strip()
         except (KeyError, IndexError):
+            self._record(self.model, None, False, err="bad response")
             raise RuntimeError(f"Groq ตอบแปลก: {r.text[:300]}")
+        usage = data.get("usage", {}) or {}
+        self._record(self.model, None, True,
+                     usage.get("prompt_tokens", 0), usage.get("completion_tokens", 0))
+        return text
 
     def status(self) -> dict:
         import time as _t
@@ -153,7 +182,8 @@ class GeminiRotator:
         provider = "groq" if self.model in GROQ_MODELS else "gemini"
         return {"model": self.model, "provider": provider,
                 "keys": len(self._keys), "cooling_down": resting,
-                "groq_key": bool(_groq_key)}
+                "groq_key": bool(_groq_key),
+                "usage": self.usage, "key_usage": self.key_stats}
 
     async def generate(
         self,
@@ -188,20 +218,29 @@ class GeminiRotator:
                     if r.status_code == 200:
                         data = r.json()
                         try:
-                            return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+                            text = data["candidates"][0]["content"]["parts"][0]["text"].strip()
                         except (KeyError, IndexError):
                             last_err = f"Gemini ตอบแปลก: {data}"
+                            self._record(self.model, idx, False, err=last_err)
                             continue
+                        um = data.get("usageMetadata", {}) or {}
+                        self._record(self.model, idx, True,
+                                     um.get("promptTokenCount", 0),
+                                     um.get("candidatesTokenCount", 0))
+                        return text
                     elif r.status_code in (429, 403, 500, 503):
                         # 429 / quota exceeded / overloaded -> สลับคีย์
                         self.mark_dead(idx)
                         last_err = f"HTTP {r.status_code}: {r.text[:300]}"
+                        self._record(self.model, idx, False, err=last_err)
                         continue
                     else:
                         last_err = f"HTTP {r.status_code}: {r.text[:300]}"
+                        self._record(self.model, idx, False, err=last_err)
                         # error ที่ไม่ใช่ quota (เช่น 400 prompt ผิด) ไม่ต้องสลับคีย์
                         break
                 except httpx.HTTPError as e:
                     last_err = str(e)
+                    self._record(self.model, idx, False, err=last_err)
                     break
         raise RuntimeError(f"Gemini ทุกคีย์ใช้ไม่ได้: {last_err}")

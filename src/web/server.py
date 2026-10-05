@@ -87,6 +87,21 @@ def _status() -> dict:
         "guilds": len(CLIENT.guilds) if online else 0,
         "latency_ms": latency,
         "uptime": _uptime(),
+        "deploy": _deploy_info(),
+    }
+
+
+def _deploy_info() -> dict:
+    """CI/CD provenance from Railway-injected env (free, no token needed)."""
+    import os
+
+    sha = os.getenv("RAILWAY_GIT_COMMIT_SHA", "")[:7]
+    return {
+        "provider": "railway" if os.getenv("RAILWAY_ENVIRONMENT_NAME") else "other/local",
+        "environment": os.getenv("RAILWAY_ENVIRONMENT_NAME", "–"),
+        "service": os.getenv("RAILWAY_SERVICE_NAME", "–"),
+        "commit": sha or "–",
+        "deployment": (os.getenv("RAILWAY_DEPLOYMENT_ID", "") or "–")[:12],
     }
 
 
@@ -116,6 +131,10 @@ input.txt{border:1px solid var(--bd);border-radius:var(--r);padding:8px 10px;fon
 @keyframes blink{50%{opacity:0}}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0}
 .hint{font-size:13px;color:var(--tx2)}
+table.tbl{border-collapse:collapse;font-size:13px;margin:8px 0;width:100%}
+table.tbl th,table.tbl td{border:1px solid var(--bd);padding:6px 10px;text-align:left}
+table.tbl th{background:#F8F9FA;font-weight:500}
+.mono{font-family:var(--mono);font-size:12px}
 </style></head><body>
 <div class="hrow">
 <div><h1>DiscordBot Server</h1><span class="pill"><span id="dot" class="dot"></span><span id="state">…</span></span></div>
@@ -134,6 +153,15 @@ input.txt{border:1px solid var(--bd);border-radius:var(--r);padding:8px 10px;fon
 <p class="sub">Append keys at runtime (rotation picks them up immediately).</p>
 <div class="row"><input id="key" class="txt" type="password" placeholder="AIza… (comma-separated for many)">
 <button class="btn" onclick="addKey()">Add / Update API key</button></div>
+<div class="sec">LLM usage</div>
+<p class="sub hint">Counted locally since boot (resets on restart). Keys shown by index only — values never leave the server.</p>
+<table class="tbl"><thead><tr><th>Model</th><th>Req</th><th>OK</th><th>Err</th><th>In tok</th><th>Out tok</th><th>Last error</th></tr></thead>
+<tbody id="usage"></tbody></table>
+<table class="tbl"><thead><tr><th>Key</th><th>Req</th><th>OK</th><th>Err</th></tr></thead>
+<tbody id="keys"></tbody></table>
+<div class="sec">Deploy</div>
+<p class="sub hint">CI/CD provenance from Railway env (commit live now). Metered $/CPU needs a Railway API token — not wired.</p>
+<div id="deploy" class="mono"></div>
 <div class="sec">Server Log</div>
 <p class="sub hint">Live log stream, newest at the bottom.</p>
 <div class="term"><div class="term-h"><span>&gt;_ Server Log</span><span id="livedot" class="dot"></span></div>
@@ -150,6 +178,20 @@ document.getElementById("state").textContent=s.online?("Online • "+(s.bot||"")
 document.getElementById("livedot").className="dot "+(s.online?"on":"off");
 mModel.textContent=s.model;mKeys.textContent=s.keys+(s.cooling_down?" ("+s.cooling_down+" cooling)":"");
 mGuilds.textContent=s.guilds;mPing.textContent=s.latency_ms==null?"–":s.latency_ms+" ms";mUp.textContent=s.uptime;
+let ub=document.getElementById("usage");ub.innerHTML="";
+Object.entries(s.usage||{}).forEach(([m,u])=>{let tr=document.createElement("tr");
+tr.innerHTML="<td></td><td></td><td></td><td></td><td></td><td></td><td></td>";
+let c=tr.children;c[0].textContent=m+(m===s.model?" ✓":"");c[1].textContent=u.requests;c[2].textContent=u.ok;
+c[3].textContent=u.errors;c[4].textContent=u.in_tokens;c[5].textContent=u.out_tokens;
+c[6].textContent=u.last_error||"–";ub.appendChild(tr);});
+let kb=document.getElementById("keys");kb.innerHTML="";
+(s.key_usage||[]).forEach((k,i)=>{let tr=document.createElement("tr");
+tr.innerHTML="<td></td><td></td><td></td><td></td>";let c=tr.children;
+c[0].textContent="#"+(i+1);c[1].textContent=k.requests;c[2].textContent=k.ok;c[3].textContent=k.errors;
+kb.appendChild(tr);});
+let d=s.deploy||{};document.getElementById("deploy").textContent=
+"provider: "+(d.provider||"–")+" | env: "+(d.environment||"–")+" | service: "+(d.service||"–")+
+" | commit: "+(d.commit||"–")+" | deployment: "+(d.deployment||"–");
 let sel=document.getElementById("model");
 if(!sel.options.length){MODELS.forEach(m=>{let o=document.createElement("option");o.value=o.textContent=m;sel.appendChild(o);});}
 if(MODELS.includes(s.model))sel.value=s.model;}
