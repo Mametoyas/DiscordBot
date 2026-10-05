@@ -15,6 +15,9 @@ class TestLocalMemory(unittest.IsolatedAsyncioTestCase):
         chat_store._memory_local.clear()
         chat_store._alias_local.clear()
         self.store = ChatStore()
+        # force local mode: .env on dev machines may contain real Supabase creds
+        self.store.url = ""
+        self.store.key = ""
         self.assertFalse(self.store.enabled)
 
     async def test_alias_roundtrip(self):

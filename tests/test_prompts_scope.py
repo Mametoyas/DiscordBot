@@ -13,7 +13,8 @@ from src.agent import prompts
 
 class TestScopeSkillsExist(unittest.TestCase):
     def test_all_scope_targets_registered(self):
-        src = open(prompts.__file__, encoding="utf-8").read()
+        with open(prompts.__file__, encoding="utf-8") as f:
+            src = f.read()
         refs = set(re.findall(r"->\s*(\w+)", src))
         # filter plain-English words, keep CamelCase skill-like tokens
         candidates = {r for r in refs if re.search(r"[a-z][A-Z]", r)}

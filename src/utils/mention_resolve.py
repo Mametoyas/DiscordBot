@@ -7,7 +7,6 @@ Existing `<@..>` / `<#..>` / `<@&..>` / emoji syntax and code blocks are untouch
 
 import re
 
-_PROTECT_RE = re.compile(r"<(?:#|@!?|@&|a?:\w+:)(\d+)>")
 _CODE_SPLIT_RE = re.compile(r"(```.*?```|`[^`\n]*`)", re.DOTALL)
 
 
@@ -24,19 +23,15 @@ def _resolve_plain(segment: str, guild) -> str:
     if "@" not in segment:
         return segment
     # longest names first so "พี่โขงสุดหล่อกว่าพี่เต้ย" wins over "โขง"
+    # (existing <@id> syntax can never match @Name patterns, so no guard needed)
     members = sorted(guild.members,
                      key=lambda m: len(m.display_name), reverse=True)
-    # remember which IDs are already properly mentioned
-    already = set(_PROTECT_RE.findall(segment))
     for m in members:
-        if str(m.id) in already:
-            continue
         for name in (m.display_name, m.name):
             if not name or f"@{name}" not in segment:
                 continue
             segment = re.sub(
                 r"(?<!\w)@" + re.escape(name) + r"(?!\w)",
                 f"<@{m.id}>", segment)
-            already.add(str(m.id))
             break
     return segment
