@@ -68,7 +68,9 @@ async def ensure_tables() -> bool:
         log.warning("[DB] asyncpg not installed — skipping auto-create (pip install asyncpg)")
         return False
     try:
-        conn = await asyncpg.connect(dsn, timeout=15)
+        # statement_cache_size=0: prepared statements break under pooler
+        # Transaction mode, so disable them (works in Session mode too).
+        conn = await asyncpg.connect(dsn, timeout=15, statement_cache_size=0)
         try:
             await conn.execute(_schema_sql())
         finally:
