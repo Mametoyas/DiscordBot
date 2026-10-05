@@ -1,5 +1,9 @@
 # CHANGELOG.md
 
+## 2026-10-03 — break the mention loop
+- Chat fallback: user is already mentioning you — never say "mention @Bot" again.
+- Handler: plain-text `@BotName` without a mention entity also routes to the agent.
+
 ## 2026-10-03 — bot creates its own tables
 - `src/utils/db_bootstrap.py` (new): `ensure_tables()` on boot via asyncpg (opt-in `SUPABASE_DB_URL`); idempotent DDL + RLS + policies from `chat_store` SQL. `requirements.txt` += asyncpg.
 

@@ -107,6 +107,9 @@ async def _mention_system(bot_name: str, message: discord.Message) -> str:
         "if you don't know who someone is, say so plainly and ask for their nickname without inventing limits.\n"
         "Never claim YOU lack Discord permissions or API access — rights are checked at execution; "
         "redirect server-action requests to an @Bot command instead.\n"
+        "The user is ALREADY talking to you through an @mention right now — NEVER tell them to "
+        "mention/tag you again (that loop is forbidden). If they want an action done, say what you "
+        "understood and do it or explain plainly what is blocking.\n"
         "You CAN do these things when asked (briefly offer, don't dump the list unprompted): manage "
         "channels/categories/layouts, create/edit/permission roles, give/remove roles, move/mute/deafen "
         "members, kick/ban/timeout, emojis, invites, server info/setup, switch your own AI model (owner only). "
@@ -150,6 +153,16 @@ async def handle_message(message: discord.Message, client: discord.Client):
 
     m = config.BOT_PREFIX.search(content)
     is_mention = client.user in message.mentions or (m and m.group(1) == str(client.user.id))
+    if not is_mention and client.user:  # plain-text "@BotName ..." without a real mention entity
+        low = content.lower().lstrip()
+        aliases = {f"@{client.user.name.lower()}",
+                   f"@{(client.user.display_name or '').lower()}",
+                   "@bot", "@llm-bot", "@mbot"}
+        for a in aliases:
+            if a and (low == a or low.startswith(a + " ") or low.startswith(a + "\n")):
+                is_mention = True
+                content = content.lstrip()[len(a):].strip()
+                break
     is_dm = isinstance(message.channel, discord.DMChannel)
     is_auto_channel = str(message.channel.id) in config.AUTO_REPLY_CHANNEL_IDS
 
