@@ -1,5 +1,8 @@
 # CHANGELOG.md
 
+## 2026-10-03 — outgoing mentions actually ping
+- `src/utils/mention_resolve.py` (new): `@DisplayName` plain text → real `<@id>` on every reply (longest-name-first, code blocks + existing mentions untouched). Wired into `_reply_chunks`.
+
 ## 2026-10-03 — party rosters route to memory
 - Planner: ตี้-questions → `recallFacts` (never `searchServer`); roster teaching → `rememberFact` with inferred key (never "?"). `searchServer` description disambiguated.
 - Chat injection: call user by remembered nickname; never paste internal blocks verbatim.

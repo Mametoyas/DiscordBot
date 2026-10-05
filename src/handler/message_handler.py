@@ -131,6 +131,12 @@ async def _mention_system(bot_name: str, message: discord.Message) -> str:
 
 
 async def _reply_chunks(message: discord.Message, text: str):
+    from src.utils.mention_resolve import apply_mentions
+
+    try:
+        text = apply_mentions(text, message.guild)
+    except Exception:  # noqa: BLE001 — mention pass must never break replies
+        pass
     await reply_paginated(message, text)
 
 
