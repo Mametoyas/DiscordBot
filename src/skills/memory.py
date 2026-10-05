@@ -5,27 +5,59 @@ Ported from discord-agent's Memory tools, backed by Supabase `memories`
 chat history, these facts are visible to EVERYONE in the server.
 """
 
+import re
+
 from . import Skill, register
 from src.utils.chat_store import store
 
+_PLACEHOLDER_KEYS = {"?", "？", "-", "ไม่รู้", "unknown", "n/a", ""}
+_KEY_SUFFIXES = ("มีสมาชิกดังนี้", "มีสมาชิก", "มีดังนี้", "มีใครบ้าง", "มีใคร", "มี", "คือ", "ได้แก่")
+
+
+def _infer_roster_key(text: str) -> str | None:
+    m = re.search(r"(ตี้|ทีม|แก๊ง|กลุ่ม)\s*([^\s@,.!?:;]+)", text or "")
+    if not m:
+        return None
+    tail = m.group(2)
+    for suf in sorted(_KEY_SUFFIXES, key=len, reverse=True):
+        if tail.endswith(suf) and len(tail) > len(suf):
+            tail = tail[: -len(suf)]
+            break
+    tail = tail.strip()
+    return (m.group(1) + tail) if tail else None
+
 
 async def _remember(guild, params, message):
+    key = (params.get("key") or "").strip()
+    content = (params.get("content") or "").strip()
+    if key in _PLACEHOLDER_KEYS:
+        key = _infer_roster_key(getattr(message, "content", "")) or ""
+    if not content:
+        # rescue the roster from the message's real mentions
+        me = getattr(getattr(message, "guild", None), "me", None)
+        others = [u for u in getattr(message, "mentions", [])
+                  if not getattr(u, "bot", False) and (me is None or u.id != me.id)]
+        if others:
+            content = ", ".join(
+                f"{u.display_name} ({u.mention})" for u in others)
+    if not key:
+        raise ValueError("บอกหัวข้อที่จะจำมาด้วย (เช่น key=ตี้พับจี)")
+    if not content:
+        raise ValueError("บอกเนื้อหาที่จะจำมาด้วย")
     await store.remember_fact(
-        guild.id,
-        params.get("key", ""),
-        params.get("content", ""),
+        guild.id, key, content,
         params.get("category") or "general",
         message.author.id,
     )
-    return f"จำไว้แล้ว: **{params.get('key').strip()}**"
+    return f"จำไว้แล้ว: **{key}**"
 
 
 register(Skill(
     name="rememberFact",
     description="Saves a shared fact everyone in the server can recall later (nickname-for-member goes to setMemberAlias instead).",
     params={
-        "key": "string - Short title of the fact.",
-        "content": "string - The fact itself.",
+        "key": "string - Short title of the fact (infer from the subject, e.g. ตี้พับจี; never '?').",
+        "content": "string (optional) - The fact itself (if omitted, member mentions in the message are used).",
         "category": "string (optional) - grouping label, default 'general'.",
     },
     execute=_remember,
