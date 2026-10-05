@@ -365,31 +365,42 @@ class ChatStore:
         except Exception as e:  # noqa: BLE001
             log.warning("[ChatStore] remember_fact failed (local copy kept): %s", e)
 
+    def _local_recall(self, guild_id, toks: list[str], limit: int) -> list[dict]:
+        out = [v for (g, _c, _k), v in _memory_local.items() if g == str(guild_id)]
+        if not toks:
+            return out[-limit:]
+        scored = [v for v in out
+                  if any(t.lower() in (v["key"] + " " + v["content"]).lower() for t in toks)]
+        return (scored or out)[-limit:]
+
     async def recall_matching(self, guild_id, query: str, limit: int = 5) -> list[dict]:
-        """Facts whose key/content matches query words (ILIKE OR). Never raises."""
+        """Facts whose key/content matches query words (ILIKE OR). Never raises.
+
+        Fallbacks (in order): keyword match -> recent facts -> local copy.
+        Small servers benefit: a miss still surfaces what was remembered lately.
+        """
         toks = self._tokens(query)
         if not self.enabled:
-            out = [v for (g, _c, _k), v in _memory_local.items() if g == str(guild_id)]
-            if not toks:
-                return out[-limit:]
-            scored = [v for v in out
-                      if any(t.lower() in (v["key"] + " " + v["content"]).lower() for t in toks)]
-            return (scored or out)[-limit:]
+            return self._local_recall(guild_id, toks, limit)
         try:
             c = self._client_or_new()
-            ors = ",".join(
-                f"key.ilike.*{t}*,content.ilike.*{t}*" for t in toks) if toks else None
-            params = {"guild_id": f"eq.{guild_id}", "select": "category,key,content",
-                      "order": "updated_at.desc", "limit": limit}
-            if ors:
-                params["or"] = f"({ors})"
+            base = {"guild_id": f"eq.{guild_id}", "select": "category,key,content",
+                    "order": "updated_at.desc", "limit": limit}
+            if toks:
+                ors = ",".join(f"key.ilike.*{t}*,content.ilike.*{t}*" for t in toks)
+                r = await c.get(f"{self.url}/rest/v1/memories", headers=self._headers(),
+                                params={**base, "or": f"({ors})"})
+                r.raise_for_status()
+                rows = r.json()
+                if rows:
+                    return rows
             r = await c.get(f"{self.url}/rest/v1/memories",
-                            headers=self._headers(), params=params)
+                            headers=self._headers(), params=base)
             r.raise_for_status()
             return r.json()
         except Exception as e:  # noqa: BLE001
-            log.warning("[ChatStore] recall_matching failed: %s", e)
-            return []
+            log.warning("[ChatStore] recall_matching failed, using local copy: %s", e)
+            return self._local_recall(guild_id, toks, limit)
 
     async def forget_fact(self, guild_id, key: str, category: str = "general") -> bool:
         """Delete one shared fact. Returns True if something was removed."""

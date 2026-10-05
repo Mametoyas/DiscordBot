@@ -1,5 +1,8 @@
 # CHANGELOG.md
 
+## 2026-10-03 — recall never comes back empty-handed
+- `recall_matching`: keyword miss → recent facts → local copy (was: `[]` on any Supabase error, hiding locally remembered facts).
+
 ## 2026-10-03 — outgoing mentions actually ping
 - `src/utils/mention_resolve.py` (new): `@DisplayName` plain text → real `<@id>` on every reply (longest-name-first, code blocks + existing mentions untouched). Wired into `_reply_chunks`.
 
